@@ -92,8 +92,8 @@ mean **more table rows and pooled numbers, not more text.**
   - Filters: public, non-fork, non-archived; issues and PRs in use; pushed within the last 12 months; ≥ 500 stars; **500–5,000 commits** (keeps GraphQL cost sane); history ≥ 4 years (needed for the backtest).
   - Stratify by language: Python, JavaScript/TypeScript, Go, Rust, Java (≈ 3 per language). Fixed seed.
   - Reject and log repos that are mostly docs/data, mirrors, or have < 50 closed issues linked to PRs.
-- [ ] Human reviews the list before any ingestion (don't spend API quota on a bad sample).
-- [ ] Keep the original 8; target **~20 total**. Paper must state the original 8 were hand-picked and the new ones random.
+- [x] Human reviews the list before any ingestion (don't spend API quota on a bad sample). → reviewed; flyway/flyway excluded as mirror (`HUMAN_EXCLUSIONS`), replaced by microsoft/playwright-java via same-seed re-run.
+- [x] Keep the original 8; target **~20 total**. Paper must state the original 8 were hand-picked and the new ones random. → `repos_round2.txt` = 8 original + 12 random = 20.
 
 ### Phase C — Batch runner
 - [x] Write `evaluation/run_all.py --repos <file>`: for each repo, run 0a → 0b → 1 → 2 → 4 → 5 and the cheap evaluations; **skip repos already completed** (marker file per stage), resume after crash/rate-limit, log one line per stage with timing.
@@ -104,13 +104,13 @@ mean **more table rows and pooled numbers, not more text.**
 Each writes one CSV in `results/round2/`:
 - [ ] `dataset.csv` — Table I columns (commits, span, files, committer IDs, bot share, issues, PRs, reviews).
 - [ ] `linkage.csv` — Table II (human commits → login, top-10 linked, PR→files, reviews→files, merge commits, `(#N)` subject share).
-- [ ] `attribution.csv` — GitHub attribution check (**subset is fine**: 1–2 pages/repo to save REST quota).
+- [ ] `attribution.csv` — GitHub attribution check (**subset is fine**: 1–2 pages/repo to save REST quota). → **code done** (`evaluation/attribution_check.py`, run_all stage `d_attribution`, 2 pages/repo, seed 0), tested on ora; awaiting batch.
 - [ ] `concentration.csv` — Table III (ranked files, median N_eff, top ≥80%, components, ρ values, perturbations).
 - [ ] `risk.csv` — Table IV (levels at W=365, agreement @180/@730).
-- [ ] `backtest.csv` — per repo + pooled: loss rate by level, risk ratio, AUC of rule vs. trivial predictors, cluster-bootstrap CIs. Pooled numbers are the headline.
-- [ ] `retrieval.csv` — BM25 / dense / RRF / fusion R@1/5/10, MRR, chance; pooled with paired bootstrap. Dense embeddings run locally (CPU OK); cache embeddings to disk.
+- [ ] `backtest.csv` — per repo + pooled: loss rate by level, risk ratio, AUC of rule vs. trivial predictors, cluster-bootstrap CIs. Pooled numbers are the headline. → **code done** (`evaluation/backtest.py`, stage `d_backtest`), tested on ora; awaiting batch.
+- [ ] `retrieval.csv` — BM25 / dense / RRF / fusion R@1/5/10, MRR, chance; pooled with paired bootstrap. Dense embeddings run locally (CPU OK); cache embeddings to disk. → **code done** (`retrieval/dense.py`, `retrieval/ranking.py::minmax_fusion`, `evaluation/retrieval_compare.py`, stage `d_retrieval`); ora excluded (19 links < 20); awaiting batch.
 - [ ] `cochange.csv` — hit@5 and precision vs. popularity baseline.
-- [ ] New code to write for the above (did not exist): `evaluation/attribution_check.py`, `evaluation/identity_reference_merge.py`, `evaluation/backtest.py`, `retrieval/dense.py` + hybrid fusion in `retrieval/ranking.py`. Add any new dependency (e.g. `sentence-transformers`) to `requirements.txt`. Unit-test each on `ora` before the batch run.
+- [ ] New code to write for the above (did not exist): `evaluation/attribution_check.py`, `evaluation/identity_reference_merge.py`, `evaluation/backtest.py`, `retrieval/dense.py` + hybrid fusion in `retrieval/ranking.py`. Add any new dependency (e.g. `sentence-transformers`) to `requirements.txt`. Unit-test each on `ora` before the batch run. → done: attribution_check, backtest, dense + fusion. **Still to write:** `identity_reference_merge.py`.
 - [ ] LLM evaluation (Reviewer #1 point c/e) must also be rebuilt: `evaluation/llm_eval.py` with RAG vs. closed-book vs. forced-guess on generated questions (answerable, unanswerable, false-premise), and `evaluation/injection_test.py` (overt vs. disguised instruction in PR text, in-memory DB copy). Run on **Flask only** (plus at most one more repo). Model: a small local model via Ollama (human installs it) or Gemini if quota allows — the paper must name whichever is actually used.
 - [ ] Drop the fix-wording experiment from the paper (weak, tuned on its own labels) unless the human says keep it.
 
@@ -160,3 +160,6 @@ Grep them for the specific term you need rather than reading them whole.
 - 2026-11-17: Audit — no Revision-1 code or results in repo (all branches at c81f2b8, 14 commits = Modules 0–11). Decision: rebuild Revision-1 experiments from scratch alongside the repo expansion.
 - 2026-11-17 (Phases B+C): `ingest/github_client.py` now rotates `GITHUB_TOKENS=a,b,c` (falls back to `GITHUB_TOKEN`), per-resource limits, sleeps only when all tokens are exhausted; adds REST `get()`. New: `evaluation/sample_repos.py` (seed 2026, shuffled creation-month windows per language stratum, ≤1 pick/month; quotas py1/jsts2/go3/rust3/java3 to balance the original 8 → 20 total; 64 examined, 12 chosen; log in `results/round2/sample_log.csv`, list in `repos_round2.txt`), `evaluation/run_all.py` (subprocess per stage, markers in `data/run_all/`, logs in `logs/run_all/`, `results/round2/failures.csv`), `tests/test_round2.py` (17 tests; suite 122 passed). `ora` end-to-end: all 6 stages OK, resume verified. `logs/`, `data/run_all/` gitignored.
   **Next:** human reviews `repos_round2.txt` (look at sendgrid/sendgrid-go = exactly 50 linked issues, generated API client; flyway/flyway = vendor-synced repo) → then full batch. Phase D eval stages get appended to `run_all.STAGES`.
+- 2026-11-18 (Phase D part 1): flyway excluded/replaced (see Phase B). Batch was **not running** at session start (no process, no log, no data beyond ora). New: `evaluation/stats.py` (AUC, cluster/stratified bootstrap, Wilson, read-only DB, per-repo CSV upsert), `evaluation/backtest.py`, `evaluation/attribution_check.py`, `retrieval/dense.py` (bge-small-en-v1.5, CPU, cache `data/processed/_embeddings/`), `retrieval/ranking.py::minmax_fusion`, `evaluation/retrieval_compare.py`; run_all stages `d_backtest`, `d_retrieval`, `d_attribution` + POOLED rows at batch end. Deps: sentence-transformers, numpy. Tests: 137 passed.
+  ora: backtest 7 cutoffs/8 cases/2 components, 0 losses → AUC undefined; attribution GitHub 98/101 human, RepoMind 5/101, precision 5/5; retrieval excluded (19 < 20 links; diagnostic run with min 10 worked). Push of `revision-round2` fails: 403, git account lacks write access to Divishth2005/Repomind.
+  **Next:** fix push access; run batch; `identity_reference_merge.py`; remaining Phase D CSVs (dataset, linkage, concentration, risk, cochange).

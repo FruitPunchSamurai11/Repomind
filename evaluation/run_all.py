@@ -2,7 +2,8 @@
 
 For each repo in --repos, runs the existing module CLIs as subprocesses:
     0a git ingest -> 0b GitHub ingest -> 1 normalise -> 2 database
-    -> 4 concentration -> 5 risk   (+ Phase D evaluation stages, appended to STAGES)
+    -> 4 concentration -> 5 risk -> Phase D experiments (backtest, retrieval, attribution)
+  then recomputes the POOLED rows of the Phase D CSVs (POOL_COMMANDS).
 
   * A stage that succeeds writes a marker data/run_all/<owner>__<name>/<stage>.done;
     marked stages are skipped on the next run, so the batch resumes after a
@@ -49,6 +50,17 @@ STAGES: list[tuple[str, str]] = [
     ("2_database", "database.cli"),
     ("4_concentration", "analysis.cli"),
     ("5_risk", "analysis.risk_cli"),
+    # Phase D experiments: each writes one row per repo into results/round2/<name>.csv
+    ("d_backtest", "evaluation.backtest"),
+    ("d_retrieval", "evaluation.retrieval_compare"),
+    ("d_attribution", "evaluation.attribution_check"),
+]
+
+# Run once at the end of every batch: recompute the POOLED rows from the per-repo case files.
+POOL_COMMANDS = [
+    ["-m", "evaluation.backtest", "--pool"],
+    ["-m", "evaluation.retrieval_compare", "--pool"],
+    ["-m", "evaluation.attribution_check", "--pool"],
 ]
 
 
@@ -153,6 +165,20 @@ def run_repo(repo: str, stages: list[tuple[str, str]], retries: int, timeout: fl
     return True
 
 
+def run_pooling():
+    """Recompute POOLED rows; a failure here is logged but does not fail the batch."""
+    log = LOG_DIR / "_pooled.log"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
+    for args in POOL_COMMANDS:
+        with log.open("a", encoding="utf-8") as f:
+            f.write(f"\n===== {now()} {' '.join(args)} =====\n")
+            f.flush()
+            code = subprocess.run([sys.executable, *args], cwd=ROOT, stdout=f, stderr=subprocess.STDOUT,
+                                  env=env).returncode
+        say(f"{'POOLED':35s} {args[1].split('.')[-1]:16s} {'OK' if code == 0 else f'FAIL exit={code} (see {log.relative_to(ROOT)})'}")
+
+
 def main():
     p = argparse.ArgumentParser(description="Resumable RepoMind batch runner (Revision round 2)")
     p.add_argument("--repos", required=True, help="file with one owner/name per line (# comments ok)")
@@ -188,6 +214,7 @@ def main():
             record_failure({"time": now(), "repo": repo, "stage": "runner", "exit_code": "",
                             "seconds": "", "attempts": 1, "error": repr(e)[:300], "log": ""})
             failed.append(repo)
+    run_pooling()
     say(f"run_all finished in {(time.time() - t0) / 60:.1f} min: {len(ok)} complete, {len(failed)} failed"
         + (f" ({', '.join(failed)}); see {FAILURES_CSV.relative_to(ROOT)}" if failed else ""))
     sys.exit(1 if failed else 0)

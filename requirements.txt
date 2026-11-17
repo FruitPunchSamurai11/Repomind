@@ -3,3 +3,6 @@ requests>=2.31.0
 python-dotenv>=1.0.0
 pytest>=7.4.0
 flask>=3.0
+# round-2 dense retrieval (BAAI/bge-small-en-v1.5 on CPU; pulls in torch)
+sentence-transformers>=3.0
+numpy>=1.26

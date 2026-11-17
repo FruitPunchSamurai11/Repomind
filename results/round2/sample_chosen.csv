@@ -1,0 +1,13 @@
+repo,stratum,language,stars,commits,created,closed_issues_linked_to_pr,window
+freedomofpress/dangerzone,python,Python,5850,2143,2020-01-06,285,2020-01
+Choices-js/Choices,jsts,JavaScript,6826,2271,2016-03-15,79,2016-03
+dyc3/opentogethertube,jsts,TypeScript,581,3602,2019-07-21,355,2019-07
+openfaas/faas-netes,go,Go,2172,1849,2017-07-23,107,2017-07
+sendgrid/sendgrid-go,go,Go,1063,689,2013-09-12,50,2013-09
+k3d-io/k3d,go,Go,6627,1620,2019-04-02,132,2019-04
+ouch-org/ouch,rust,Rust,3822,1562,2021-03-19,130,2021-03
+PyO3/rust-numpy,rust,Rust,1393,1132,2017-04-21,58,2017-04
+NLnetLabs/routinator,rust,Rust,588,2481,2018-07-26,208,2018-07
+sofastack/sofa-boot,java,Java,5078,666,2018-04-02,86,2018-04
+RipMeApp/ripme,java,Java,4150,3197,2017-01-06,326,2017-01
+microsoft/playwright-java,java,Java,1572,1024,2020-09-25,158,2020-09

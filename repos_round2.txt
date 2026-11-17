@@ -1,0 +1,23 @@
+# RepoMind round-2 sample. Generated 2026-11-17 by evaluation/sample_repos.py, seed 2026.
+# Original 8 were hand-picked (first submission); the rest are a random stratified sample.
+# Lines starting with # are ignored by evaluation/run_all.py.
+pallets/flask  # original
+psf/requests  # original
+tiangolo/fastapi  # original
+BurntSushi/ripgrep  # original
+psf/black  # original
+expressjs/express  # original
+spf13/cobra  # original
+sindresorhus/ora  # original
+freedomofpress/dangerzone  # random:python
+Choices-js/Choices  # random:jsts
+dyc3/opentogethertube  # random:jsts
+openfaas/faas-netes  # random:go
+sendgrid/sendgrid-go  # random:go
+k3d-io/k3d  # random:go
+ouch-org/ouch  # random:rust
+PyO3/rust-numpy  # random:rust
+NLnetLabs/routinator  # random:rust
+sofastack/sofa-boot  # random:java
+RipMeApp/ripme  # random:java
+microsoft/playwright-java  # random:java

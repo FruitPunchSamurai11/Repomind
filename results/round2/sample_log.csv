@@ -1,0 +1,88 @@
+stratum,window,query,seed,total_count,repo,stars,commits,decision,reason
+python,2020-01,language:Python stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2020-01-01..2020-01-31,2026,65,,,,window,65 candidates returned
+python,2020-01,,2026,,bookwyrm-social/bookwyrm,2817,,rejected,docs/list/data repo (keyword 'books')
+python,2020-01,,2026,,freedomofpress/dangerzone,5850,2143,chosen,passes all filters
+jsts,2019-06,language:JavaScript stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2019-06-01..2019-06-30,2026,22,,,,window,22 candidates returned
+jsts,2019-06,,2026,,Kenguba/google-access-helper,1119,15,rejected,only 1 PRs (< 50)
+jsts,2019-06,,2026,,ly525/luban-h5,6249,762,rejected,7 closed issues linked to PRs (< 50)
+jsts,2019-06,,2026,,zapier/zapier-platform,572,5088,rejected,5088 commits (outside 500-5000)
+jsts,2019-06,,2026,,alexadam/printable-mockups,536,60,rejected,only 33 PRs (< 50)
+jsts,2019-06,,2026,,breck7/pldb,800,3643,rejected,9 closed issues linked to PRs (< 50)
+jsts,2016-03,language:JavaScript stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2016-03-01..2016-03-31,2026,40,,,,window,40 candidates returned
+jsts,2016-03,,2026,,lisong/code-push-server,1863,338,rejected,338 commits (outside 500-5000)
+jsts,2016-03,,2026,,tscanlin/tocbot,1501,560,rejected,6 closed issues linked to PRs (< 50)
+jsts,2016-03,,2026,,webtorrent/webtorrent-cli,1389,623,rejected,19 closed issues linked to PRs (< 50)
+jsts,2016-03,,2026,,GoogleChromeLabs/ui-element-samples,4117,206,rejected,206 commits (outside 500-5000)
+jsts,2016-03,,2026,,Choices-js/Choices,6826,2271,chosen,passes all filters
+jsts,2019-07,language:TypeScript stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2019-07-01..2019-07-31,2026,54,,,,window,54 candidates returned
+jsts,2019-07,,2026,,nestjs/serve-static,517,2284,rejected,2 closed issues linked to PRs (< 50)
+jsts,2019-07,,2026,,zkywsg/Daily-LLM,872,,rejected,docs/list/data repo (keyword 'interview')
+jsts,2019-07,,2026,,wechat-miniprogram/weui-miniprogram,2432,246,rejected,only 44 PRs (< 50)
+jsts,2019-07,,2026,,layrjs/layr,1215,1078,rejected,only 2 PRs (< 50)
+jsts,2019-07,,2026,,dyc3/opentogethertube,581,3602,chosen,passes all filters
+go,2017-07,language:Go stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2017-07-01..2017-07-31,2026,32,,,,window,32 candidates returned
+go,2017-07,,2026,,openfaas/faas-netes,2172,1849,chosen,passes all filters
+go,2013-09,language:Go stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2013-09-01..2013-09-30,2026,11,,,,window,11 candidates returned
+go,2013-09,,2026,,openshift/osin,1935,204,rejected,204 commits (outside 500-5000)
+go,2013-09,,2026,,sendgrid/sendgrid-go,1063,689,chosen,passes all filters
+go,2019-04,language:Go stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2019-04-01..2019-04-30,2026,38,,,,window,38 candidates returned
+go,2019-04,,2026,,itchyny/gojq,3819,1815,rejected,19 closed issues linked to PRs (< 50)
+go,2019-04,,2026,,k3d-io/k3d,6627,1620,chosen,passes all filters
+rust,2021-03,language:Rust stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2021-03-01..2021-03-31,2026,24,,,,window,24 candidates returned
+rust,2021-03,,2026,,ouch-org/ouch,3822,1562,chosen,passes all filters
+rust,2017-04,language:Rust stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2017-04-01..2017-04-30,2026,12,,,,window,12 candidates returned
+rust,2017-04,,2026,,PyO3/rust-numpy,1393,1132,chosen,passes all filters
+rust,2011-12,language:Rust stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2011-12-01..2011-12-31,2026,0,,,,window,0 candidates returned
+rust,2018-07,language:Rust stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2018-07-01..2018-07-31,2026,16,,,,window,16 candidates returned
+rust,2018-07,,2026,,orlp/slotmap,1374,193,rejected,193 commits (outside 500-5000)
+rust,2018-07,,2026,,RustCrypto/RSA,678,568,rejected,46 closed issues linked to PRs (< 50)
+rust,2018-07,,2026,,dtolnay/ryu,711,406,rejected,only 40 PRs (< 50)
+rust,2018-07,,2026,,vhakulinen/gnvim,1964,625,rejected,10 closed issues linked to PRs (< 50)
+rust,2018-07,,2026,,NLnetLabs/routinator,588,2481,chosen,passes all filters
+java,2018-04,language:Java stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2018-04-01..2018-04-30,2026,25,,,,window,25 candidates returned
+java,2018-04,,2026,,spring-io/spring-javaformat,964,697,rejected,5 closed issues linked to PRs (< 50)
+java,2018-04,,2026,,sofastack/sofa-bolt,2505,133,rejected,133 commits (outside 500-5000)
+java,2018-04,,2026,,TerraFirmaCraft/TerraFirmaCraft,699,6766,rejected,6766 commits (outside 500-5000)
+java,2018-04,,2026,,TencentCloud/tencentcloud-sdk-java,584,1870,rejected,0 closed issues linked to PRs (< 50)
+java,2018-04,,2026,,sofastack/sofa-boot,5078,666,chosen,passes all filters
+java,2016-04,language:Java stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2016-04-01..2016-04-30,2026,15,,,,window,15 candidates returned
+java,2016-04,,2026,,Dimezis/BlurView,4073,354,rejected,only 30 PRs (< 50)
+java,2016-04,,2026,,runelite/runelite,5528,15585,rejected,15585 commits (outside 500-5000)
+java,2016-04,,2026,,MobiVM/robovm,1048,1409,rejected,27 closed issues linked to PRs (< 50)
+java,2016-04,,2026,,tls-attacker/TLS-Attacker,882,9470,rejected,9470 commits (outside 500-5000)
+java,2016-04,,2026,,ICIJ/datashare,783,6915,rejected,6915 commits (outside 500-5000)
+java,2019-04,language:Java stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2019-04-01..2019-04-30,2026,12,,,,window,12 candidates returned
+java,2019-04,,2026,,hivemq/hivemq-community-edition,1217,1347,rejected,39 closed issues linked to PRs (< 50)
+java,2019-04,,2026,,openjdk/valhalla,728,91982,rejected,issues disabled
+java,2019-04,,2026,,s4kibs4mi/java-developer-roadmap,4552,,rejected,docs/list/data repo (keyword 'roadmap')
+java,2019-04,,2026,,ch4mpy/spring-addons,673,1997,rejected,22 closed issues linked to PRs (< 50)
+java,2019-04,,2026,,smart-cloud/smart-cloud,688,771,rejected,only 2 PRs (< 50)
+java,2013-12,language:Java stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2013-12-01..2013-12-31,2026,11,,,,window,11 candidates returned
+java,2013-12,,2026,,gocd/gocd,7444,23248,rejected,23248 commits (outside 500-5000)
+java,2013-12,,2026,,federicoiosue/Omni-Notes,2808,3487,rejected,4 closed issues linked to PRs (< 50)
+java,2013-12,,2026,,javers/javers,1576,3104,rejected,18 closed issues linked to PRs (< 50)
+java,2013-12,,2026,,signalapp/Signal-Server,10785,5589,rejected,5589 commits (outside 500-5000)
+java,2013-12,,2026,,googleads/googleads-mobile-android-examples,1886,,rejected,docs/list/data repo (keyword 'examples')
+java,2015-04,language:Java stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2015-04-01..2015-04-30,2026,20,,,,window,20 candidates returned
+java,2015-04,,2026,,primefaces/primefaces,1947,17548,rejected,17548 commits (outside 500-5000)
+java,2015-04,,2026,,tipsy/j2html,783,291,rejected,291 commits (outside 500-5000)
+java,2015-04,,2026,,spring-guides/gs-spring-boot-docker,652,212,rejected,Java is 46% of code (< 50%; mostly other/docs/data)
+java,2015-04,,2026,,fangyidong/json-simple,762,43,rejected,only 32 PRs (< 50)
+java,2015-04,,2026,,vaadin/flow,761,28550,rejected,28550 commits (outside 500-5000)
+java,2017-05,language:Java stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2017-05-01..2017-05-31,2026,15,,,,window,15 candidates returned
+java,2017-05,,2026,,vaadin/platform,687,2963,rejected,Java is 41% of code (< 50%; mostly other/docs/data)
+java,2017-05,,2026,,javapathfinder/jpf-core,622,340,rejected,340 commits (outside 500-5000)
+java,2017-05,,2026,,j-easy/easy-flows,693,66,rejected,only 9 PRs (< 50)
+java,2017-05,,2026,,apache/servicecomb-java-chassis,1943,4669,rejected,34 closed issues linked to PRs (< 50)
+java,2017-05,,2026,,kubernetes-client/java,4017,5486,rejected,5486 commits (outside 500-5000)
+java,2012-12,language:Java stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2012-12-01..2012-12-31,2026,8,,,,window,8 candidates returned
+java,2012-12,,2026,,orientechnologies/orientdb,5001,27329,rejected,27329 commits (outside 500-5000)
+java,2012-12,,2026,,LWJGL/lwjgl3,5492,4612,rejected,11 closed issues linked to PRs (< 50)
+java,2012-12,,2026,,Alluxio/alluxio,7263,33838,rejected,33838 commits (outside 500-5000)
+java,2012-12,,2026,,flyway/flyway,10203,,rejected,"excluded on human review: mirror: GitHub copy synced from the vendor's internal repository (human review, 2026-11-17)"
+java,2012-12,,2026,,matteobaccan/owner,940,1648,rejected,0 closed issues linked to PRs (< 50)
+java,2017-01,language:Java stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2017-01-01..2017-01-31,2026,16,,,,window,16 candidates returned
+java,2017-01,,2026,,RipMeApp/ripme,4150,3197,chosen,passes all filters
+java,2008-11,language:Java stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2008-11-01..2008-11-30,2026,0,,,,window,0 candidates returned
+java,2020-09,language:Java stars:>=500 fork:false archived:false mirror:false is:public pushed:>=2025-11-17 created:2020-09-01..2020-09-30,2026,18,,,,window,18 candidates returned
+java,2020-09,,2026,,microsoft/playwright-java,1572,1024,chosen,passes all filters

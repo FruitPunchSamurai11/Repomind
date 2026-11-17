@@ -1,0 +1,162 @@
+# RepoMind — Revision Round 2 (task brief for Claude Code)
+
+> Read this file fully before doing anything. It sits next to the project's own `CLAUDE.md`
+> and does **not** replace it: every guardrail in `CLAUDE.md` and `docs/PROJECT.md` still applies.
+> Put this file in `docs/` and start each session with: *"Read docs/REVISION_ROUND2.md and continue from the checklist."*
+
+---
+
+## 0. Token budget rules (most important — follow them in every session)
+
+Our Claude usage is limited. Claude's job is to **write and fix code**, not to run long jobs or read big outputs.
+
+1. **Never run the full pipeline inside the chat session.** Write the script, run it once on the smallest
+   repo (`ora`) to prove it works, then hand the full run to the human:
+   `nohup python -m evaluation.run_all --repos repos_round2.txt > logs/run_all.log 2>&1 &`
+2. **Never `cat` large files** (JSONL, logs, SQLite dumps, full JSON metrics). Use `head`, `tail -n 30`,
+   `grep`, `wc -l`, or a short Python summary. Show at most ~30 lines of any output.
+3. **Every experiment writes its results to a small CSV** in `results/round2/` (one row per repo).
+   Paper tables are built from those CSVs by a script — never typed by hand, never read back in full.
+4. **Read code by grepping first**, then open only the relevant function. Do not read whole modules
+   you don't need to change.
+5. When something fails during the human's overnight run, the human will paste **only the traceback**.
+   Fix that, don't re-explore the codebase.
+6. Keep a short progress log at the bottom of this file (Section 9) so the next session doesn't
+   rediscover state. Update the checklist ticks as you go.
+
+---
+
+## 1. What RepoMind is (one paragraph)
+
+RepoMind mines Git + GitHub history (commits, PRs, issues, reviews) into a provenance-preserving
+SQLite model, computes activity-based knowledge-concentration and maintenance-risk indicators, and
+answers repository questions with BM25 (+ dense/hybrid) retrieval and a citation-checked LLM.
+Principle: **Data → Structured Knowledge → Retrieval → LLM**; the LLM is the last stage.
+Modules: 0a git ingest · 0b GitHub GraphQL ingest (checkpointed) · 1 normalisation + identity
+resolution · 2 SQLite + edge tables · 3 knowledge-map graph (HTML) · 4 concentration metrics ·
+5 bus-factor/risk signals · 6 multi-repo evaluation · 7 retrieval · 8 grounded LLM (Gemini) ·
+9 line-level code explanation · 10 pre-change briefing · 11 local Flask UI (6 screens, 105 tests).
+
+---
+
+## 2. Where the paper stands
+
+### Submission history
+| Stage | What happened |
+|---|---|
+| First submission | 8 repos, Gemini on 10 template questions, BM25 only, no backtest |
+| Review round 1 (Reviewer #1, all criteria "Good") | Asked for: (a) more repositories, (b) identity validation vs. manually labelled data, (c) broader LLM eval, (d) dense + hybrid retrieval comparison, (e) no-retrieval baseline, (f) temporal validation of risk signals, (g) keep "indicators, not predictions" framing |
+| Revision 1 (done by a previous Claude Code session) | Added (c), (d), (e), (f), (g); (b) only partly — validated against **GitHub's own commit attribution**, not manual labels; **(a) NOT done — still 8 repos** |
+| Review round 2 (current) | **Revise and Resubmit.** "Results insufficient to establish originality/contribution", include the **implementation screenshots** referenced in methodology, **≤ 25 references** (currently 32), English language editing |
+
+### Experiments described in Revision 1 — CODE NOT FOUND, REBUILD FROM SCRATCH
+An audit (see Section 9) found **no scripts and no results** for any of these in this repo. Treat every
+Revision-1 number in the submitted paper as **unverified**. Rebuild each experiment below, run it, and use
+**only the numbers it produces** — do not aim for or reuse the paper's old numbers. The descriptions say what
+to build, not what results to expect:
+- **GitHub attribution check** — public commits API, 5 random pages × 100 commits per repo (all of `ora`), fixed seed; reports share GitHub attributes to an account and precision of RepoMind's links.
+- **Reference-account identity merge** — merges sampled identities by GitHub's attributed account; Spearman ρ of rankings + risk-level changes (lower bound).
+- **Temporal backtest** — component assessed at every 31 Dec cutoff (≥2 y before, ≥1 y after), commits ≤ t only, reviewer signal omitted; outcome = all active devs lost within 365 d; AUC vs. "fewer active devs" and "less recent activity"; cluster bootstrap over components.
+- **Dense / hybrid retrieval** — `bge-small-en-v1.5` cosine; RRF of top-100 lists; min–max score fusion; paired bootstrap.
+- **Extended LLM eval** — local Gemma 3 1B, 139 generated questions, RAG vs. closed-book vs. forced-guess, Wilson CIs, exact McNemar.
+- **Prompt-injection test** — 42 PR descriptions, overt vs. disguised instruction, in-memory DB copy.
+
+### Numbers in the revised paper (8 repos) — UNVERIFIED, for orientation only, never copy into new text
+Linkage 1–31% of human commits (GitHub attributes 96–100% in 7 repos); PR→file linkage 0% in FastAPI, Black, ora;
+ρ ≥ 0.96 under bot/name changes, as low as 0.28 under half-life; risk agreement down to 13% across windows;
+backtest 66% (high) vs. 18% (low) lost, rule AUC 0.68 vs. 0.80 / 0.87 trivial predictors;
+BM25 R@10 57–81%, hybrid 73% pooled; co-change beats baseline in 6/7.
+
+---
+
+## 3. Goal of this round
+
+Main fix: **expand from 8 to ~20 repositories**, drawn by a documented random procedure, and re-run the
+cheap, fully automatic experiments on all of them. Secondary: support a small **manual identity
+labelling** set (humans label, not Claude), and support the figure/reference/language fixes.
+
+**Page limit is 6 pages** (confirm with the chair whether extra pages are allowed). More repos must therefore
+mean **more table rows and pooled numbers, not more text.**
+
+---
+
+## 4. Checklist
+
+### Phase A — Orient (one short session)
+- [x] Audit done: Revision-1 code is not in the repo; checkout = first submission (commit c81f2b8). Rebuilding from scratch.
+- [x] Confirm the pipeline entry points for each module (just the commands, not the code). → `CLAUDE.md` § Commands; `run_all` calls them as subprocesses.
+- [x] Check `.env` has `GITHUB_TOKEN`; support **multiple tokens** (`GITHUB_TOKENS=tok1,tok2,...`) with rotation on rate-limit, if not already present. Never print or log tokens.
+
+### Phase B — Repository sample
+- [x] Write `evaluation/sample_repos.py` that draws candidates via the GitHub search API and saves `repos_round2.txt` + `results/round2/sample_log.csv` (query, filters, seed, candidates seen, chosen, rejection reason).
+  - Filters: public, non-fork, non-archived; issues and PRs in use; pushed within the last 12 months; ≥ 500 stars; **500–5,000 commits** (keeps GraphQL cost sane); history ≥ 4 years (needed for the backtest).
+  - Stratify by language: Python, JavaScript/TypeScript, Go, Rust, Java (≈ 3 per language). Fixed seed.
+  - Reject and log repos that are mostly docs/data, mirrors, or have < 50 closed issues linked to PRs.
+- [ ] Human reviews the list before any ingestion (don't spend API quota on a bad sample).
+- [ ] Keep the original 8; target **~20 total**. Paper must state the original 8 were hand-picked and the new ones random.
+
+### Phase C — Batch runner
+- [x] Write `evaluation/run_all.py --repos <file>`: for each repo, run 0a → 0b → 1 → 2 → 4 → 5 and the cheap evaluations; **skip repos already completed** (marker file per stage), resume after crash/rate-limit, log one line per stage with timing.
+- [x] One repo failing must not stop the batch; write the failure to `results/round2/failures.csv`.
+- [x] Test end-to-end on `ora` only. Then stop and hand over the nohup command.
+
+### Phase D — Experiments to re-run on all ~20 repos (no LLM, no paid API)
+Each writes one CSV in `results/round2/`:
+- [ ] `dataset.csv` — Table I columns (commits, span, files, committer IDs, bot share, issues, PRs, reviews).
+- [ ] `linkage.csv` — Table II (human commits → login, top-10 linked, PR→files, reviews→files, merge commits, `(#N)` subject share).
+- [ ] `attribution.csv` — GitHub attribution check (**subset is fine**: 1–2 pages/repo to save REST quota).
+- [ ] `concentration.csv` — Table III (ranked files, median N_eff, top ≥80%, components, ρ values, perturbations).
+- [ ] `risk.csv` — Table IV (levels at W=365, agreement @180/@730).
+- [ ] `backtest.csv` — per repo + pooled: loss rate by level, risk ratio, AUC of rule vs. trivial predictors, cluster-bootstrap CIs. Pooled numbers are the headline.
+- [ ] `retrieval.csv` — BM25 / dense / RRF / fusion R@1/5/10, MRR, chance; pooled with paired bootstrap. Dense embeddings run locally (CPU OK); cache embeddings to disk.
+- [ ] `cochange.csv` — hit@5 and precision vs. popularity baseline.
+- [ ] New code to write for the above (did not exist): `evaluation/attribution_check.py`, `evaluation/identity_reference_merge.py`, `evaluation/backtest.py`, `retrieval/dense.py` + hybrid fusion in `retrieval/ranking.py`. Add any new dependency (e.g. `sentence-transformers`) to `requirements.txt`. Unit-test each on `ora` before the batch run.
+- [ ] LLM evaluation (Reviewer #1 point c/e) must also be rebuilt: `evaluation/llm_eval.py` with RAG vs. closed-book vs. forced-guess on generated questions (answerable, unanswerable, false-premise), and `evaluation/injection_test.py` (overt vs. disguised instruction in PR text, in-memory DB copy). Run on **Flask only** (plus at most one more repo). Model: a small local model via Ollama (human installs it) or Gemini if quota allows — the paper must name whichever is actually used.
+- [ ] Drop the fix-wording experiment from the paper (weak, tuned on its own labels) unless the human says keep it.
+
+### Phase E — Manual identity labelling (addresses Reviewer #1 point b)
+- [ ] Write `evaluation/export_identity_sample.py`: from 3 repos (e.g. Flask, Black, one new), sample ~150 human commits (fixed seed) and export CSV: `sha, author_name, author_email, repomind_developer_id, repomind_login, github_attributed_login, label_same_person (blank), notes (blank)`.
+- [ ] **Claude does not fill the labels.** Two authors label independently; then write `evaluation/score_identity_labels.py` → precision/recall of RepoMind links and of GitHub attribution vs. human labels, plus Cohen's κ between the two labellers.
+
+### Phase F — Tables and figures for the paper
+- [ ] `paper/build_tables.py` reads the CSVs and emits LaTeX tables (≤ 1 table per RQ; per-repo rows compact, pooled row at bottom). With ~20 repos, consider moving per-repo detail of Tables III–IV into one combined table and reporting ranges + pooled values in text.
+- [ ] Re-generate Fig. 1 (pipeline diagram) — it was removed in Revision 1 and must come back.
+- [ ] **Screenshots (human does this):** run the Flask UI (`127.0.0.1`), capture Knowledge map (Module 3 graph), Risk screen, and Ask screen with citation warnings visible. Combine into **one two-column figure** with (a)(b)(c) panels. Claude may write a small script to tile/crop PNGs only.
+
+### Phase G — Paper text (only after numbers exist)
+- [ ] **Start from the ORIGINAL first-submission paper**, not the Revision-1 PDF. Nothing from the Revision-1 text or numbers is reused.
+- [ ] Update abstract, Sections IV–VIII with new numbers from CSVs only. **Never type a number that isn't in a results file.**
+- [ ] Cut references from 32 to **≤ 25**. Candidates (authors decide): [26] Spearman, [30] Hanley & McNeil, [31] Efron & Tibshirani, [11] Hirschman, [14] Tornhill, [16] Robles & González-Barahona, [21] SWE-bench. Renumber citations.
+- [ ] Language pass: shorter sentences; move number lists (e.g. the co-change and fix-wording strings in V-E) into tables; consistent British spelling (paper uses "normalisation", "summarise").
+- [ ] Keep the AI-use acknowledgment; update it to cover this round.
+- [ ] Draft a point-by-point **response letter** covering round 1 (a–g) and round 2 (results, screenshots, references, language) — what changed and where (section/table numbers).
+
+---
+
+## 5. Guardrails (from CLAUDE.md / PROJECT.md — never violate)
+- Commit count ≠ expertise. Risk levels are **indicators of recorded activity**, not measurements of expertise or predictions of failure.
+- Unresolved identities are preserved, never guessed into a merge. Bots flagged, not deleted.
+- Raw data is immutable; every derived artefact is regenerable.
+- Tokens never logged, printed or written to data files.
+- **No invented results.** If a stage fails for a repo, report it as failed/excluded with the reason. Negative results (e.g. Express co-change, rule AUC below trivial predictors) stay in the paper.
+- Report exclusions the same way the paper already does (e.g. repos without issue–PR links excluded from retrieval).
+
+## 6. Rate-limit notes
+- GraphQL ≈ 5,000 points/hour per token; large repos (thousands of PRs with reviews) are expensive. Use checkpointing + token rotation; sleep until reset rather than failing.
+- REST commits API (attribution check) has its own limit — sample, don't crawl.
+
+## 7. Definition of done
+- ~20 repos processed (or each failure documented), all CSVs in `results/round2/`, tables generated by script.
+- Manual identity labels scored.
+- Paper ≤ 6 pages (or the chair-approved limit), ≤ 25 references, Fig. 1 + screenshot figure present.
+- Response letter drafted.
+
+## 8. Files to read only if needed
+`docs/PROJECT.md`, `docs/DATA_MODEL.md`, `docs/METRICS.md`, `docs/RISK.md`, `docs/EVALUATION.md`,
+`EVALUATION_RESULTS.md`, `docs/RETRIEVAL.md`, `docs/LLM.md`, `docs/EXPLAIN.md`, `docs/ASSIST.md`, `docs/UI.md`.
+Grep them for the specific term you need rather than reading them whole.
+
+## 9. Progress log (Claude Code: append here, newest last, 1–3 lines per session)
+- 2026-11-17: Audit — no Revision-1 code or results in repo (all branches at c81f2b8, 14 commits = Modules 0–11). Decision: rebuild Revision-1 experiments from scratch alongside the repo expansion.
+- 2026-11-17 (Phases B+C): `ingest/github_client.py` now rotates `GITHUB_TOKENS=a,b,c` (falls back to `GITHUB_TOKEN`), per-resource limits, sleeps only when all tokens are exhausted; adds REST `get()`. New: `evaluation/sample_repos.py` (seed 2026, shuffled creation-month windows per language stratum, ≤1 pick/month; quotas py1/jsts2/go3/rust3/java3 to balance the original 8 → 20 total; 64 examined, 12 chosen; log in `results/round2/sample_log.csv`, list in `repos_round2.txt`), `evaluation/run_all.py` (subprocess per stage, markers in `data/run_all/`, logs in `logs/run_all/`, `results/round2/failures.csv`), `tests/test_round2.py` (17 tests; suite 122 passed). `ora` end-to-end: all 6 stages OK, resume verified. `logs/`, `data/run_all/` gitignored.
+  **Next:** human reviews `repos_round2.txt` (look at sendgrid/sendgrid-go = exactly 50 linked issues, generated API client; flyway/flyway = vendor-synced repo) → then full batch. Phase D eval stages get appended to `run_all.STAGES`.

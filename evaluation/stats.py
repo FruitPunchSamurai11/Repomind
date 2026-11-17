@@ -1,8 +1,11 @@
 """Small shared helpers for the round-2 experiments (pure Python, no numpy):
 AUC, percentile bootstrap, read-only DB access, per-repo CSV upserts."""
 import csv
+import os
 import random
 import sqlite3
+import time
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Sequence
 
@@ -14,7 +17,7 @@ POOLED = "POOLED"
 
 def connect_ro(db_path: Path = DB_PATH) -> sqlite3.Connection:
     """Read-only connection: experiments never write to the shared database."""
-    conn = sqlite3.connect(Path(db_path).resolve().as_uri() + "?mode=ro", uri=True)
+    conn = sqlite3.connect(Path(db_path).resolve().as_uri() + "?mode=ro", uri=True, timeout=60)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -102,8 +105,42 @@ def fmt(x) -> str:
     return str(x)
 
 
+@contextmanager
+def file_lock(path: Path, timeout: float = 120.0, stale: float = 300.0):
+    """Cross-process lock (a <file>.lock created exclusively) so two processes
+    never read-modify-write the same results CSV at once. A lock older than
+    `stale` seconds is assumed abandoned (crashed writer) and removed."""
+    lock = Path(str(path) + ".lock")
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    deadline = time.time() + timeout
+    while True:
+        try:
+            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(fd)
+            break
+        except FileExistsError:
+            try:
+                if time.time() - lock.stat().st_mtime > stale:
+                    lock.unlink(missing_ok=True)
+                    continue
+            except FileNotFoundError:
+                continue
+            if time.time() > deadline:
+                raise TimeoutError(f"could not lock {path}")
+            time.sleep(0.1)
+    try:
+        yield
+    finally:
+        lock.unlink(missing_ok=True)
+
+
 def upsert_row(path: Path, fields: list[str], row: dict, key: str = "repo"):
     """Write `row` into a one-row-per-repo CSV, replacing any previous row for the same repo."""
+    with file_lock(path):
+        _upsert_row(path, fields, row, key)
+
+
+def _upsert_row(path: Path, fields: list[str], row: dict, key: str):
     path.parent.mkdir(parents=True, exist_ok=True)
     rows = []
     if path.exists():

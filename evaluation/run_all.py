@@ -41,7 +41,8 @@ LOG_DIR = ROOT / "logs" / "run_all"
 FAILURES_CSV = ROOT / "results" / "round2" / "failures.csv"
 FAILURE_FIELDS = ["time", "repo", "stage", "exit_code", "seconds", "attempts", "error", "log"]
 
-# (stage name, module). Each is run as: python -m <module> --repo owner/name
+# (stage name, "module [args]"). Each is run as: python -m <module> [args] --repo owner/name.
+# New stages must be appended at the end: running a stage invalidates the markers of later ones.
 # Phase D experiments are added here as they are written.
 STAGES: list[tuple[str, str]] = [
     ("0a_git", "ingest.cli"),
@@ -54,6 +55,13 @@ STAGES: list[tuple[str, str]] = [
     ("d_backtest", "evaluation.backtest"),
     ("d_retrieval", "evaluation.retrieval_compare"),
     ("d_attribution", "evaluation.attribution_check"),
+    # Phase D part 2 (appended at the end so adding them never invalidates the markers above)
+    ("d_dataset", "evaluation.export_tables dataset"),
+    ("d_linkage", "evaluation.export_tables linkage"),
+    ("d_concentration", "evaluation.export_tables concentration"),
+    ("d_risk", "evaluation.export_tables risk"),
+    ("d_cochange", "evaluation.export_tables cochange"),
+    ("d_identity_merge", "evaluation.identity_reference_merge"),
 ]
 
 # Run once at the end of every batch: recompute the POOLED rows from the per-repo case files.
@@ -128,7 +136,7 @@ def run_stage(repo: str, stage: str, module: str, retries: int, timeout: float |
             f.write(f"\n===== {now()} {repo} {stage} attempt {attempt} =====\n")
             f.flush()
             try:
-                code = subprocess.run([sys.executable, "-m", module, "--repo", repo], cwd=ROOT,
+                code = subprocess.run([sys.executable, "-m", *module.split(), "--repo", repo], cwd=ROOT,
                                       stdout=f, stderr=subprocess.STDOUT, env=env, timeout=timeout).returncode
                 error = "" if code == 0 else last_error_line(log)
             except subprocess.TimeoutExpired:

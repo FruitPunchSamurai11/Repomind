@@ -79,7 +79,7 @@ def test_point_stats_rates_rr_and_auc():
 
 
 def test_summarise_reports_ci_and_components():
-    cases = [{"repo": "o/r", "component": f"c{i % 4}", "level": "high" if i % 2 else "low",
+    cases = [{"repo": "o/r", "component": f"c{i % 4}", "level": "high" if i % 2 else "low", "next_year_commits": i % 3,
               "active_devs": 1 + i % 3, "recent_commits": i, "lost": i % 2} for i in range(16)]
     row = bt.summarise("o/r", cases, n_boot=50, seed=0)
     assert row["status"] == "ok" and row["components"] == 4

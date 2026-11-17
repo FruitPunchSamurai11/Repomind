@@ -16,3 +16,6 @@ data/*.html
 .claude/
 logs/
 data/run_all/
+# contains author names and e-mails; labelled by humans, kept local
+results/round2/identity_labelling/
+*.csv.lock

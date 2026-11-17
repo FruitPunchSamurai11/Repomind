@@ -25,6 +25,12 @@ Procedure (per repository):
     a cluster bootstrap that resamples components (all cutoffs of one
     component move together; pooled: clusters are repo x component).
 
+Two outcome definitions are reported side by side:
+  A (columns without prefix)  all cases, as above;
+  B (columns prefixed excl0_) leaves out component-years with zero commits
+    in the following year, so "lost" means the component kept changing but
+    by other people; it separates hand-over from the component going quiet.
+
 Caveats: file renames move a path to a new component; the same component
 appears at several cutoffs (hence the cluster bootstrap); levels are
 indicators of recorded activity, not predictions.
@@ -35,7 +41,7 @@ Outputs:
 
 Usage:
   python -m evaluation.backtest --repo owner/name
-  python -m evaluation.backtest --pool        # recompute POOLED from all case files
+  python -m evaluation.backtest --pool        # refresh every repo row + POOLED from the case files
 """
 import argparse
 from collections import defaultdict
@@ -56,13 +62,14 @@ PREDICTORS = ("rule", "fewer_active", "less_recent")
 
 CASE_FIELDS = ["repo", "component", "cutoff", "level", "active_devs", "recent_commits",
                "total_commits", "next_year_commits", "lost"]
-FIELDS = (["repo", "status", "cutoffs", "first_cutoff", "last_cutoff", "cases", "components",
-           "skipped_dormant", "skipped_insufficient", "base_loss_rate",
-           "n_high", "n_medium", "n_low"]
-          + [f"loss_{l}{s}" for l in ("high", "medium", "low") for s in ("", "_lo", "_hi")]
-          + ["rr_high_low", "rr_high_low_lo", "rr_high_low_hi"]
-          + [f"auc_{p}{s}" for p in PREDICTORS for s in ("", "_lo", "_hi")]
-          + [f"diff_rule_minus_{p}{s}" for p in PREDICTORS[1:] for s in ("", "_lo", "_hi")]
+VARIANT = "excl0_"  # outcome B: component-years with zero commits in the next year left out
+STAT_KEYS = (["cases", "components", "base_loss_rate", "n_high", "n_medium", "n_low"]
+             + [f"loss_{l}{s}" for l in ("high", "medium", "low") for s in ("", "_lo", "_hi")]
+             + ["rr_high_low", "rr_high_low_lo", "rr_high_low_hi"]
+             + [f"auc_{p}{s}" for p in PREDICTORS for s in ("", "_lo", "_hi")]
+             + [f"diff_rule_minus_{p}{s}" for p in PREDICTORS[1:] for s in ("", "_lo", "_hi")])
+REPO_KEYS = ["cutoffs", "first_cutoff", "last_cutoff", "skipped_dormant", "skipped_insufficient"]
+FIELDS = (["repo", "status"] + REPO_KEYS + STAT_KEYS + [VARIANT + k for k in STAT_KEYS]
           + ["bootstrap", "seed"])
 
 
@@ -153,10 +160,10 @@ def point_stats(cases: list[dict]) -> dict:
     return out
 
 
-def summarise(repo: str, cases: list[dict], n_boot: int, seed: int) -> dict:
-    row = {"repo": repo, "cases": len(cases), "bootstrap": n_boot, "seed": seed}
+def stats_block(cases: list[dict], n_boot: int, seed: int) -> dict:
+    row = {"cases": len(cases)}
     if not cases:
-        return {**row, "status": "no cases"}
+        return row
     clusters = defaultdict(list)
     for c in cases:
         clusters[(c["repo"], c["component"])].append(c)
@@ -169,6 +176,16 @@ def summarise(repo: str, cases: list[dict], n_boot: int, seed: int) -> dict:
     ci = bootstrap(units, lambda s: point_stats([c for u in s for c in u]), n_boot, seed)
     for k, (lo, hi) in ci.items():
         row[f"{k}_lo"], row[f"{k}_hi"] = lo, hi
+    return row
+
+
+def summarise(repo: str, cases: list[dict], n_boot: int, seed: int) -> dict:
+    row = {"repo": repo, "cases": len(cases), "bootstrap": n_boot, "seed": seed}
+    if not cases:
+        return {**row, "status": "no cases"}
+    row.update(stats_block(cases, n_boot, seed))
+    active_next_year = [c for c in cases if int(c["next_year_commits"]) > 0]
+    row.update({VARIANT + k: v for k, v in stats_block(active_next_year, n_boot, seed).items()})
     row["status"] = "ok"
     return row
 
@@ -194,7 +211,30 @@ def run_repo(repo: str, n_boot: int, seed: int) -> dict:
     return row
 
 
+def refresh_repo_rows(n_boot: int, seed: int) -> int:
+    """Recompute every repo's statistics from its case file (keeps the
+    repo-level fields such as cutoffs from the existing row), so rows written
+    by an older version of this script gain any newly added columns."""
+    existing = {r["repo"]: r for r in read_rows(OUT_CSV)} if OUT_CSV.exists() else {}
+    n = 0
+    for f in sorted(CASES_DIR.glob("*.csv")):
+        cases = read_rows(f)
+        if not cases:
+            continue
+        repo = cases[0]["repo"]
+        old = existing.get(repo, {})
+        row = summarise(repo, cases, n_boot, seed)
+        cuts = sorted({c["cutoff"] for c in cases})
+        derived = {"cutoffs": len(cuts), "first_cutoff": cuts[0], "last_cutoff": cuts[-1]}
+        for k in REPO_KEYS:
+            row[k] = old.get(k) or derived.get(k, "")
+        upsert_row(OUT_CSV, FIELDS, row)
+        n += 1
+    return n
+
+
 def run_pool(n_boot: int, seed: int) -> dict:
+    refresh_repo_rows(n_boot, seed)
     cases = []
     for f in sorted(CASES_DIR.glob("*.csv")):
         cases += read_rows(f)
@@ -208,7 +248,7 @@ def main():
     p = argparse.ArgumentParser(description="Temporal backtest of the Module 5 risk rule")
     g = p.add_mutually_exclusive_group(required=True)
     g.add_argument("--repo")
-    g.add_argument("--pool", action="store_true", help="recompute the POOLED row from all case files")
+    g.add_argument("--pool", action="store_true", help="refresh every repo row and the POOLED row from the case files")
     p.add_argument("--bootstrap", type=int, default=1000)
     p.add_argument("--seed", type=int, default=0)
     a = p.parse_args()
@@ -223,6 +263,9 @@ def main():
         print(f"  loss rate high {ci('loss_high')}  medium {ci('loss_medium')}  low {ci('loss_low')}")
         print(f"  risk ratio high/low {ci('rr_high_low')}")
         print(f"  AUC rule {ci('auc_rule')}  fewer-active {ci('auc_fewer_active')}  less-recent {ci('auc_less_recent')}")
+        v = VARIANT
+        print(f"  outcome B (excl. zero-commit next years): {f(v + 'cases')} cases; loss high {ci(v + 'loss_high')} "
+              f"low {ci(v + 'loss_low')}; AUC rule {ci(v + 'auc_rule')}")
     print(f"  -> {OUT_CSV}")
 
 

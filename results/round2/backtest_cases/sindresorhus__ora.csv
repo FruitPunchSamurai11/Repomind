@@ -1,0 +1,9 @@
+repo,component,cutoff,level,active_devs,recent_commits,total_commits,next_year_commits,lost
+sindresorhus/ora,(root),2018-12-31,medium,8,22,76,36,0
+sindresorhus/ora,(root),2019-12-31,low,11,36,112,16,0
+sindresorhus/ora,(root),2020-12-31,low,8,16,128,14,0
+sindresorhus/ora,(root),2021-12-31,medium,5,14,142,8,0
+sindresorhus/ora,(root),2022-12-31,medium,2,8,150,14,0
+sindresorhus/ora,(root),2023-12-31,medium,3,14,164,5,0
+sindresorhus/ora,(root),2024-12-31,medium,2,5,169,9,0
+sindresorhus/ora,.github/workflows,2024-12-31,medium,1,1,5,1,0

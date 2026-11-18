@@ -1,0 +1,21 @@
+repo,status,attributed_human_commits,developer_ids_mapped,reference_accounts,developer_ids_merged_away,conflicting_developer_ids,rho_files_hhi,files_compared,rho_components_hhi,components_compared,risk_components,risk_levels_changed,risk_level_changes,bound
+BurntSushi/ripgrep,ok,101,4,4,0,0,1.0000,193,1.0000,50,63,0,,lower bound: only sampled commits are merged
+Choices-js/Choices,ok,197,5,5,0,0,1.0000,454,1.0000,36,43,0,,lower bound: only sampled commits are merged
+dyc3/opentogethertube,ok,191,9,7,2,0,0.5176,561,0.6887,61,78,4,high->medium:3; medium->low:1,lower bound: only sampled commits are merged
+expressjs/express,ok,196,9,9,0,0,1.0000,492,1.0000,75,84,0,,lower bound: only sampled commits are merged
+freedomofpress/dangerzone,ok,192,6,5,1,0,0.9054,193,0.9138,41,65,9,low->medium:7; medium->high:2,lower bound: only sampled commits are merged
+k3d-io/k3d,ok,179,45,43,2,0,0.7290,2582,0.6607,57,71,14,high->medium:12; medium->low:2,lower bound: only sampled commits are merged
+microsoft/playwright-java,ok,181,10,10,0,0,1.0000,345,1.0000,28,33,0,,lower bound: only sampled commits are merged
+NLnetLabs/routinator,ok,200,15,14,1,0,1.0000,227,1.0000,28,43,0,,lower bound: only sampled commits are merged
+openfaas/faas-netes,ok,139,12,12,0,0,1.0000,2118,1.0000,44,59,0,,lower bound: only sampled commits are merged
+ouch-org/ouch,ok,191,13,11,2,0,0.8959,109,0.9363,17,22,1,medium->low:1,lower bound: only sampled commits are merged
+pallets/flask,ok,196,37,36,1,0,1.0000,452,1.0000,39,45,0,,lower bound: only sampled commits are merged
+psf/black,ok,184,67,62,5,0,0.9941,220,0.9985,25,29,0,,lower bound: only sampled commits are merged
+psf/requests,ok,178,46,44,2,0,0.9987,304,1.0000,25,30,0,,lower bound: only sampled commits are merged
+PyO3/rust-numpy,ok,198,13,12,1,0,0.9417,100,0.9182,22,27,0,,lower bound: only sampled commits are merged
+RipMeApp/ripme,ok,132,25,24,1,0,1.0000,386,1.0000,9,12,0,,lower bound: only sampled commits are merged
+sendgrid/sendgrid-go,ok,139,29,28,1,0,1.0000,109,1.0000,39,52,0,,lower bound: only sampled commits are merged
+sindresorhus/ora,ok,98,33,33,0,0,1.0000,9,,3,3,0,,lower bound: only sampled commits are merged
+sofastack/sofa-boot,ok,199,17,16,1,0,0.9988,458,0.9965,38,44,0,,lower bound: only sampled commits are merged
+spf13/cobra,ok,184,86,84,2,0,1.0000,88,1.0000,9,10,0,,lower bound: only sampled commits are merged
+tiangolo/fastapi,ok,78,23,23,0,0,1.0000,1959,1.0000,132,157,0,,lower bound: only sampled commits are merged

@@ -138,3 +138,35 @@ Question: "What is PR #N about, and who wrote it?"
 - **Older output format:** this run was written before the `generation_failed` column existed, so its CSVs don't have it.
 - **Repeatability:** one answer's wording changed between two identical pilot runs.
 - **First submission:** no injection test.
+
+## Anomalies checked (read-only investigation; no code or result changed)
+
+**1. Risk-window agreement changed for fastapi (@180: 13% → 84.4%) and ripgrep (@730: 80% → 33.3%) — newer data, not code.**
+- `git diff c81f2b8 HEAD` shows no change in `analysis/`, `evaluation/experiments.py`, `evaluation/metrics.py`, `normalization/` or `database/`.
+- Risk levels are computed relative to the repo's latest commit (`analysis/features.py: reference = max(commit times)`).
+- Cutting today's data at the first-submission commit count reproduces the first submission exactly:
+
+| Repo | Data | Reference date | Levels H/M/L | Agreement @180 / @730 |
+|---|---|---|---|---|
+| fastapi | first 7,713 commits | 2026-08-26 | 8/88/18 | 13.2% / 81.6% |
+| fastapi | all 8,128 commits | 2026-11-17 | 15/89/5 | 84.4% / 82.6% |
+| ripgrep | first 2,287 commits | 2026-08-04 | 1/12/2 | 40.0% / 80.0% |
+| ripgrep | all 2,304 commits | 2026-11-10 | 0/5/10 | 86.7% / 33.3% |
+
+- **fastapi:** at the old reference date, 73 components were medium at 365 d but dormant at 180 d. The 415 newer commits touch 158 depth-2 components (89 by Sebastián Ramírez; the rest mostly by bots, which risk excludes), so those components are now active in both windows.
+- **ripgrep:** at the new reference date, 365-day levels shift (low 2 → 10). Seven of those components are still medium at 730 d. With 15 assessable components, each one is 6.7 percentage points.
+- The same truncation also reproduces flask (90.9% @180) and black (50% / 85%).
+- **Implication for reporting:** window agreement depends on the snapshot date as well as the window, so it should be reported with the reference date.
+
+**2a. ρ conservative vs name-merged = 0.520 in dyc3/opentogethertube — one person split across identities.**
+- Only one name group merges more than one ID: "carson mcmanus", 3 IDs with 2,094 + 1,114 + 4 = 3,212 of the repo's 3,602 commits.
+- The 1,114-commit ID comes from a GitHub noreply e-mail linked to `dyc3`, the repo owner's login. The other two come from plain git e-mails and have no login.
+- None is a bot. Same name, same repo, and a noreply ID for the owner's own account point to one person, but this is not verified by a person.
+- Merging them puts 89% of commits under one identity, so many file HHIs move at once.
+- The conservative resolution splits this person, which the GitHub-attribution merge (k3d ρ 0.729, opentogethertube 0.518 in `identity_merge.csv`) also shows.
+
+**2b. ρ with vs without bots = 0.881 in openfaas/faas-netes — vendored dependency files.**
+- The only bot is `dependabot[bot]` (44 of 1,849 commits). Its most-touched files are `go.mod`, `go.sum` and `vendor/modules.txt`.
+- 1,749 of the 2,118 ranked files are under `vendor/`. Of the 273 files whose HHI changes when bots are added, 267 are under `vendor/`.
+- The top committer changes in only 3 files.
+- Excluding `vendor/`, ρ is 0.995 (369 files).

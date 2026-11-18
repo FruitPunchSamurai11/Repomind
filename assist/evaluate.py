@@ -28,7 +28,8 @@ def cochange_eval(conn: sqlite3.Connection, repo: str, k: int = 5, min_support: 
     cut = int(len(commits) * train_frac)
     train, test = commits[:cut], commits[cut:]
     model = CoChange(train)
-    popular = [p for p, _ in model.file_count.most_common(k + 1)]
+    # ties broken by path: Counter.most_common keeps insertion order, which follows set iteration (hash-seeded)
+    popular = [p for p, _ in sorted(model.file_count.items(), key=lambda kv: (-kv[1], kv[0]))[:k + 1]]
 
     cases = hits_co = hits_pop = 0
     prec_co = prec_pop = 0.0

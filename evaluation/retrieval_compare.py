@@ -137,9 +137,18 @@ def run_repo(repo: str, n_boot: int, seed: int, max_queries: int = 400, min_quer
 
 
 def run_pool(n_boot: int, seed: int) -> dict:
+    """Recompute every per-repo row from its case file (so all CIs come from the same, order-independent
+    bootstrap), then the stratified POOLED row. corpus_prs is kept from the stage's own row."""
+    existing = {r["repo"]: r for r in read_rows(OUT_CSV)} if OUT_CSV.exists() else {}
     cases = []
     for f in sorted(CASES_DIR.glob("*.csv")):
-        cases += read_rows(f)
+        repo_cases = read_rows(f)
+        cases += repo_cases
+        if repo_cases:
+            repo = repo_cases[0]["repo"]
+            row = summarise(repo, repo_cases, n_boot, seed)
+            row["corpus_prs"] = existing.get(repo, {}).get("corpus_prs") or repo_cases[0]["corpus_prs"]
+            upsert_row(OUT_CSV, FIELDS, row)
     if not cases:
         row = {"repo": POOLED, "status": "no cases (no repo passed the inclusion rule yet)", "queries": 0}
         upsert_row(OUT_CSV, FIELDS, row)

@@ -142,3 +142,37 @@ def test_stratified_bootstrap_does_not_depend_on_group_or_member_order():
     assert stats.bootstrap_stratified(mixed, stat, 200, 0) == base
     flat = [x for g in groups for x in g]
     assert stats.bootstrap(flat, stat, 200, 0) == stats.bootstrap(list(reversed(flat)), stat, 200, 0)
+
+
+# ---------- co-change: ties broken by path / commit id, not by set or SQL order ----------
+
+def test_cochange_popularity_baseline_breaks_ties_by_path(monkeypatch):
+    from datetime import datetime, timedelta, timezone
+    from assist import evaluate as ev
+    t0 = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    # training: 10 files changed 7 times each (all tied); test: pairs of those files
+    train = [(t0 + timedelta(days=d), frozenset({f"f{d % 10}.py"})) for d in range(70)]
+    test = [(t0 + timedelta(days=100 + d), frozenset({f"f{d % 4}.py", f"f{(d + 1) % 4}.py"})) for d in range(30)]  # only f0-f3
+    results = []
+    for tr in (train, list(reversed(train))):   # same history, different first-seen order of files
+        monkeypatch.setattr(ev, "load_commits", lambda *a, _c=tr + test, **k: _c)
+        results.append(ev.cochange_eval(None, "o/r", k=3, min_support=1))
+    assert results[0] == results[1]
+
+
+def test_rescore_keeps_answers_and_reports_invalid_questions():
+    from evaluation import llm_eval as le
+    row = {"repo": "o/r", "condition": "rag", "qid": "pr_about-0", "question_type": "pr_about",
+           "question": "What is pull request #7 about?", "expected": "Fix the parser", "answer": "It fixes the parser.",
+           "llm_called": "1", "generation_failed": "0", "correct": "1", "abstained": "0", "safe": "0",
+           "confidently_wrong": "0", "success": "1", "outcome": "correct"}
+
+    class Conn:
+        def __init__(self, title): self.title = title
+        def execute(self, *a): return type("C", (), {"fetchone": lambda s: (self.title,) if self.title else None})()
+        def close(self): pass
+
+    new, changes = le.rescore([row], conn_for=lambda: Conn("Fix the parser"))
+    assert new[0]["answer"] == row["answer"] and new[0]["success"] == "1" and changes == []
+    new, changes = le.rescore([row], conn_for=lambda: Conn(None))
+    assert changes and changes[0]["validity"] == "PR missing"

@@ -42,12 +42,12 @@ def load_commits(conn: sqlite3.Connection, repo: str, max_files: int = 30, inclu
         entry = files.setdefault(r["commit_id"], (r["timestamp"], set()))
         entry[1].add(r["path"])
     out = []
-    for ts, paths in files.values():
+    for cid, (ts, paths) in files.items():
         if 1 <= len(paths) <= max_files:
             dt = datetime.fromisoformat(ts)
-            out.append((dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc), frozenset(paths)))
-    out.sort(key=lambda x: x[0])
-    return out
+            out.append((dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc), cid, frozenset(paths)))
+    out.sort(key=lambda x: (x[0], x[1]))  # commit id breaks timestamp ties: SQL row order is not stable
+    return [(dt, paths) for dt, _, paths in out]
 
 
 class CoChange:

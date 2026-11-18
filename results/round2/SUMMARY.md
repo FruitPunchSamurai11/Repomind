@@ -22,17 +22,17 @@ Modules 4 and 5 (concentration, risk, backtest, identity merge) exclude vendored
 ## 2. Identity linkage (Reviewer #1 b) — `linkage.csv`, `attribution.csv`, `identity_merge.csv`
 | | Round 2 | First submission |
 |---|---|---|
-| Human commits linked to a GitHub login (per repo, min–median–max) | 0.3% – 4.3% – 34.0% | 1% – 25% (8 repos) |
+| Human commits linked to a GitHub login (per repo, min–median–max) | 0.3% – 4.4% – 34.0% | 1% – 25% (8 repos) |
 | Repos with PR→file linkage exactly 0% | 1 (ora); fastapi 0.1%, black 0.3% | 3 (fastapi, black, ora) |
 | Non-merge commit subjects ending "(#N)" (min–median–max) | 0% – 12.3% – 94.3% | 46–79% in fastapi/black/ora (stated as inferred) |
-| GitHub attributes a sampled human commit to an account (pooled, 3,538 commits, 2 pages × 20 repos) | **94.8%** [94.0, 95.5]; per repo 66.0–100% | not measured |
-| RepoMind links the same commits (pooled) | 14.6% (517/3,538) | not measured |
-| Precision of RepoMind links vs GitHub (pooled) | **99.6%** [98.6, 99.9] (514/516) | not measured |
-| Coverage: GitHub-attributed commits RepoMind also links | **15.3%** [14.2, 16.6] | not measured |
+| GitHub attributes a sampled human commit to an account (pooled, 3,539 commits, 2 pages × 20 repos) | **94.7%** [94.0, 95.4]; per repo 66.0–100% | not measured |
+| RepoMind links the same commits (pooled) | 14.6% (516/3,539) | not measured |
+| Precision of RepoMind links vs GitHub (pooled) | **99.6%** [98.6, 99.9] (513/515) | not measured |
+| Coverage: GitHub-attributed commits RepoMind also links | **15.3%** [14.1, 16.6] | not measured |
 | Reference-account merge, ρ of file HHI rankings (lower bound) | median 1.000, min 0.518 (opentogethertube), 0.825 (k3d) | not measured |
 | Reference-account merge: ids merged away / risk levels changed (lower bound) | 22 ids; 20 of 941 component levels | not measured |
 
-The values for the original 8 repos are close to the first submission's: flask 1.6%, black 24.7%, fastapi 13.2% (first submission 2%, 25%, 14%).
+The values for the original 8 repos are close to the first submission's: flask 2.1%, black 25.3%, fastapi 13.5% (first submission 2%, 25%, 14%).
 Repos where GitHub attributes < 90%: requests 89.0%, sendgrid-go 69.5%, ripme 66.0%.
 Manual identity labels (Phase E) are not yet scored.
 
@@ -66,10 +66,10 @@ Outcome B = the same, excluding component-years with zero commits in the followi
 | | Outcome A | Outcome B |
 |---|---|---|
 | Cases (base loss rate) | 2,136 (36.0%) | 1,614 (15.2%) |
-| Loss rate: high / medium / low | 59.9% [53.8, 65.9] / 35.1% [31.8, 38.3] / 17.9% [14.3, 21.6] | 34.0% [27.2, 41.4] / 13.8% [11.3, 16.5] / 7.3% [5.1, 10.0] |
-| Risk ratio high vs low | 3.35 [2.72, 4.18] | 4.64 [3.25, 6.76] |
-| AUC: rule / fewer active devs / less recent activity | 0.654 [0.631, 0.678] / 0.758 [0.730, 0.781] / 0.847 [0.828, 0.864] | 0.656 [0.618, 0.687] / 0.697 [0.657, 0.737] / 0.844 [0.818, 0.872] |
-| AUC difference: rule − fewer active / rule − less recent | −0.104 [−0.130, −0.076] / −0.193 [−0.217, −0.169] | −0.041 [−0.080, −0.003] / −0.188 [−0.224, −0.152] |
+| Loss rate: high / medium / low | 59.9% [54.1, 66.4] / 35.1% [31.9, 38.5] / 17.9% [14.5, 21.7] | 34.0% [26.7, 41.6] / 13.8% [11.2, 16.7] / 7.3% [5.1, 10.0] |
+| Risk ratio high vs low | 3.35 [2.74, 4.22] | 4.64 [3.30, 6.71] |
+| AUC: rule / fewer active devs / less recent activity | 0.654 [0.631, 0.676] / 0.758 [0.731, 0.783] / 0.847 [0.828, 0.864] | 0.656 [0.621, 0.689] / 0.697 [0.657, 0.734] / 0.844 [0.816, 0.870] |
+| AUC difference: rule − fewer active / rule − less recent | −0.104 [−0.130, −0.076] / −0.193 [−0.217, −0.169] | −0.041 [−0.082, −0.005] / −0.188 [−0.225, −0.148] |
 
 Per repo, the rule's AUC ranges from 0.478 (opentogethertube) to 0.857 (dangerzone). In 19 of the 19 repos with an AUC, it is below the "less recent" AUC.
 First submission: no backtest.
@@ -82,10 +82,10 @@ Task: issue title → closing PR, title+body index. 19 repos and 3,625 queries; 
 | BM25 | 41.7% | 62.2% | 69.9% | 0.514 | — |
 | Dense (bge-small-en-v1.5) | 46.5% | 67.3% | 74.1% | 0.561 | +4.2 [+2.9, +5.5] |
 | RRF | 46.4% | 69.0% | 75.3% | 0.567 | +5.3 [+4.4, +6.3] |
-| Min–max fusion | 48.4% | 70.3% | **77.0%** | 0.584 | +7.1 [+6.1, +8.0] |
+| Min–max fusion | 48.4% | 70.3% | **77.0%** | 0.584 | +7.1 [+6.1, +8.1] |
 
 - Min–max fusion beats BM25 on R@10 in 19 of 19 repos.
-- Min–max vs dense: R@10 +2.9 [+2.1, +3.7]. RRF vs dense: R@10 +1.2 [+0.2, +2.1]; MRR +0.006 [−0.001, +0.014].
+- Min–max vs dense: R@10 +2.9 [+2.0, +3.8]. RRF vs dense: R@10 +1.2 [+0.2, +2.1]; MRR +0.006 [−0.001, +0.014].
 - BM25 R@10 per repo is 54.8% – 84.6%; the first submission had 57% – 81% (BM25 only). The original 7 match closely: flask 75.6/76, requests 58.7/59, fastapi 69.0/69, ripgrep 72.2/72, black 59.2/57, express 83.0/81, cobra 72.8/73.
 
 **Co-change** (`cochange.csv`, hit@5 vs popularity baseline):
@@ -241,5 +241,54 @@ Unchanged in direction:
   - The new value reflects the current database. A shared developer's identity fields depend on which repo was loaded last.
 - Backtest case files: for repos with nothing excluded, the point estimates are identical but bootstrap CI bounds move slightly (e.g. flask AUC rule lower bound 0.4930 → 0.4946).
   - Cause: case rows come out in a different order on each run (Python randomises set ordering), so the seeded bootstrap draws different samples.
-  - The CIs are therefore not bit-reproducible across runs.
+  - The CIs are therefore not bit-reproducible across runs. (Fixed: see "Reproducibility fixes".)
 - sendgrid-go: `skipped_insufficient` 76 → 69 after excluding its 10 vendor files.
+
+## Reproducibility fixes (re-run 2026-11-18, `run_all` 20/20 complete) — compared with commit 9962c90
+
+**Fixes**
+- **Developer records no longer depend on load order.**
+  - Before: developer ids were global and the `developer` table was loaded with `INSERT OR REPLACE`, so a person seen in two repos kept the attributes from whichever repo loaded last.
+    - 1,442 of 31,347 ids were shared across repos; 85 had conflicting attributes (display name 75, confidence 64, sources 64; login and bot flag never differed).
+    - Black's human→login linkage could vary between 13.1% and 25.3% depending on order.
+  - Now: ids are scoped per repo (`normalization/identity.py`); the loader reports conflicts (0 in this run) and prunes orphan rows.
+  - Tested by loading two repos in both orders.
+- **Bootstrap CIs no longer depend on case order.**
+  - `evaluation/stats.py` sorts units canonically before resampling.
+  - Backtest cases are sorted by (cutoff, component) when written.
+  - `retrieval_compare --pool` recomputes every per-repo row from its case file, so per-repo CIs come from the same bootstrap.
+- **Co-change ties are broken deterministically.**
+  - The popularity baseline breaks ties by path (it was `Counter.most_common`, which uses set order).
+  - Commits with equal timestamps are ordered by commit id.
+- **Checks**
+  - Backtest + retrieval pooling run twice: identical files.
+  - All Module 4/5/co-change/merge exports plus both poolings run under `PYTHONHASHSEED` 1 and 2: all 8 CSVs byte-identical.
+  - 184 tests pass.
+
+**LLM eval and injection re-scored against the fixed database (no new answers)**
+- 0 of 450 LLM-eval scores changed; 0 expected answers changed. 0 of 80 injection scores changed (marker-based, DB-independent).
+- 3 false-premise questions (k3d `false_premise-0/6/7`, 9 rows) no longer satisfy the premise check with scoped ids:
+  - The named person has another id under the same name that did touch the file.
+  - All 9 rows score as safe/confidently-wrong on the answer text exactly as before. They are kept, and listed by `python -m evaluation.llm_eval --rescore`.
+
+**Changed headline numbers (old → new)**
+
+| Item | Old → new |
+|---|---|
+| Human commits linked, per-repo median | 4.3% → 4.4% |
+| Linked share: flask / black / fastapi | 1.6% → 2.1% / 24.7% → 25.3% / 13.2% → 13.5% |
+| Linked share: ripgrep / requests / cobra / ora | 4.1% → 4.3% / 2.9% → 3.1% / 9.9% → 10.2% / 3.5% → 4.0% |
+| GitHub-attributed, pooled | 94.8% [94.0, 95.5] (3,538) → 94.7% [94.0, 95.4] (3,539) |
+| RepoMind precision vs GitHub, pooled | 99.6% (514/516) → 99.6% (513/515) |
+| Coverage, pooled | 15.3% [14.2, 16.6] → 15.3% [14.1, 16.6] |
+| Name-merge ρ: flask / requests | 0.9997 → 0.9996 / 0.9948 → 0.9942 |
+| Co-change popularity baseline hit@5 (all): playwright-java / sendgrid-go | 59.1% → 58.6% / 69.3% → 65.2% |
+| Co-change popularity baseline hit@5 (no boilerplate): routinator | 56.1% → 63.1% |
+| Backtest pooled A: RR high vs low CI | [2.72, 4.18] → [2.74, 4.22] |
+| Backtest pooled B: RR high vs low CI | [3.25, 6.76] → [3.30, 6.71] |
+| Retrieval pooled: min–max vs BM25 ΔR@10 CI | [+6.1, +8.0] → [+6.1, +8.1] |
+
+- No point estimate changed in `dataset.csv`, `risk.csv`, `backtest.csv` or `retrieval.csv`.
+- Other CI bounds moved by ≤ 0.5 points (see section 5's table).
+- The identity-merge row changed only in counts for black and playwright-java (ids mapped 67 → 66, 10 → 8). The attribution stage re-fetched the same pages of the GitHub commits API, and new upstream commits shifted 2 (black) and 6 (playwright-java) of the 200 sampled commits; black attribution 99.5% → 98.9%.
+- Co-change still wins in 19/20 (all) and 17/20 (no boilerplate) repos.

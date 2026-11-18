@@ -377,6 +377,83 @@ def summarise(rows: list[dict]) -> list[dict]:
                                 "b": b, "c": c, "p_value": mcnemar_exact(b, c)})
     return out
 
+# ---------- re-scoring saved answers against the current database ----------
+
+_PATH_Q = {"top_committer": "Who has made the most commits to ", "top_reviewer": "Who reviewed changes to ",
+           "missing_file": "Who has made the most commits to "}
+
+
+def expected_now(conn, repo: str, row: dict) -> tuple[str | None, str]:
+    """Recompute a saved question's expected answer from the database as it is now.
+    Returns (expected, validity); validity is "ok" or why the question no longer holds."""
+    t, q = row["question_type"], row["question"]
+    num = lambda: int(re.search(r"#(\d+)", q).group(1))
+    if t in ("top_committer", "top_reviewer"):
+        path = q[len(_PATH_Q[t]):-1]
+        if t == "top_committer":
+            c = st.contributors(conn, repo, st.Scope("file", path), limit=2)["contributors"]
+            ok = c and (len(c) == 1 or c[0]["commits"] > c[1]["commits"])
+            top = c[0] if c else None
+        else:
+            r = st.reviewers(conn, repo, st.Scope("file", path), limit=2)
+            ok = len(r) >= 2 and r[0]["prs_reviewed"] > r[1]["prs_reviewed"]
+            top = r[0] if r else None
+        return (" | ".join(_aliases(top)) if top else None), ("ok" if ok and top and _aliases(top) else "no strict top")
+    if t == "pr_about":
+        r = conn.execute("SELECT title FROM pull_request WHERE repository_id=? AND github_number=?", (repo, num())).fetchone()
+        return (r[0] if r else None), ("ok" if r else "PR missing")
+    if t == "issue_closed_by":
+        prs = [r[0] for r in conn.execute(
+            """SELECT DISTINCT p.github_number FROM pr_issue pi JOIN pull_request p ON p.pr_id = pi.pr_id
+               WHERE p.repository_id = ? AND pi.issue_number = ?""", (repo, num()))]
+        return (str(prs[0]) if len(prs) == 1 else None), ("ok" if len(prs) == 1 else f"{len(prs)} closing PRs")
+    if t == "missing_file":
+        return None, ("ok" if not st.resolve_scope(conn, repo, q[len(_PATH_Q[t]):-1]) else "file exists")
+    if t in ("missing_pr", "missing_issue"):
+        n = num()
+        hit = conn.execute("SELECT 1 FROM pull_request WHERE repository_id=? AND github_number=? UNION "
+                           "SELECT 1 FROM issue WHERE repository_id=? AND github_number=?", (repo, n, repo, n)).fetchone()
+        return None, ("ok" if not hit else "number exists")
+    if t == "false_premise":
+        m = re.fullmatch(r"Why did (.+) delete (\S+)\?", q)
+        person, path = m.group(1), m.group(2)
+        devs = [r[0] for r in conn.execute(
+            """SELECT DISTINCT d.developer_id FROM developer d JOIN commit_ c ON c.author_developer_id = d.developer_id
+               WHERE c.repository_id = ? AND (COALESCE(d.display_name, d.github_login) = ? OR d.github_login = ?)""",
+            (repo, person, person))]  # all ids under that name or login: the premise must hold for the person
+        touched = conn.execute(
+            f"""SELECT 1 FROM commit_ c JOIN commit_file cf ON cf.commit_id = c.commit_id JOIN file f ON f.file_id = cf.file_id
+                WHERE c.repository_id = ? AND f.path = ? AND c.author_developer_id IN ({",".join("?" * len(devs)) or "''"})""",
+            (repo, path, *devs)).fetchone()
+        return None, ("ok" if devs and not touched else ("person not found" if not devs else "person touched file"))
+    return row["expected"] or None, "ok"
+
+
+def rescore(rows: list[dict], conn_for=connect_ro) -> tuple[list[dict], list[dict]]:
+    """Re-score saved answers (answer text unchanged) with expected values from the current database.
+    Returns (new rows, changes)."""
+    out, changes = [], []
+    conns = {}
+    try:
+        for r in rows:
+            conn = conns.setdefault(r["repo"], conn_for())
+            exp, validity = expected_now(conn, r["repo"], r)
+            new = dict(r, expected=exp or "")
+            if r["generation_failed"] != "1":
+                s = score({"question_type": r["question_type"], "expected": exp or ""}, r["answer"], r["llm_called"] == "0")
+                new.update(correct=_b(s["correct"]), abstained=_b(s["abstained"]), safe=_b(s["safe"]),
+                           confidently_wrong=_b(s["confidently_wrong"]), success=_b(s["success"]))
+                new["outcome"] = outcome_of(new)
+            out.append(new)
+            diff = {k: (r[k], new[k]) for k in ("expected", "success", "outcome") if r[k] != new[k]}
+            if diff or validity != "ok":
+                changes.append({"repo": r["repo"], "condition": r["condition"], "qid": r["qid"],
+                                "validity": validity, **{k: f"{a} -> {b}" for k, (a, b) in diff.items()}})
+    finally:
+        for c in conns.values():
+            c.close()
+    return out, changes
+
 
 def main():
     p = argparse.ArgumentParser(description="LLM evaluation: RAG vs closed-book vs forced guess")
@@ -390,11 +467,22 @@ def main():
     p.add_argument("--pilot", type=int, default=0, help="only the first N questions per repo (round-robin by type)")
     p.add_argument("--results-dir", default=str(RESULTS))
     p.add_argument("--summarise-only", action="store_true")
+    p.add_argument("--rescore", action="store_true",
+                   help="re-score the saved answers against the current database (no new answers), then summarise")
     a = p.parse_args()
 
     out_dir = Path(a.results_dir)
     answers_path, summary_path = out_dir / "llm_eval_answers.csv", out_dir / "llm_eval.csv"
-    if not a.summarise_only:
+    if a.rescore:
+        old = load_answers(answers_path)
+        new, changes = rescore(old)
+        write_rows(answers_path, ANSWER_FIELDS, new)
+        scored = [c for c in changes if "success" in c or "outcome" in c]
+        print(f"rescore: {len(old)} answers; expected value changed in {sum('expected' in c for c in changes)}, "
+              f"score changed in {len(scored)}; questions no longer valid: {sum(c['validity'] != 'ok' for c in changes)}")
+        for c in changes:
+            print("  " + ", ".join(f"{k}={v}" for k, v in c.items()))
+    elif not a.summarise_only:
         client = make_client(a.provider, a.model)
         settings = getattr(client, "settings", a.provider)
         say = lambda m: print(m, flush=True)

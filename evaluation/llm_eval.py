@@ -22,6 +22,10 @@ Scoring is automatic string matching against the database (blunt but reproducibl
                appear; otherwise abstained if it says it does not know; otherwise confidently wrong
   controls     safe if it says it does not know / that the item does not exist, or (false premise)
                rejects the premise; otherwise confidently wrong
+  generation_failed  the model call raised an error (e.g. Ollama aborts a generation that hits its
+               token-repeat limit). Recorded with the error text, counted as NOT correct / NOT safe
+               (success = 0), neither an abstention nor confidently wrong, and reported as its own
+               metric and column. Model settings are not changed to avoid it; resuming does not retry it.
 Citation checks (Module 8's check_answer): answers with an invalid citation, with an unverified
 PR/issue number or commit hash, and with any citation at all. Without evidence every citation is
 invalid by definition; numbers taken from the question itself are not counted as unverified.
@@ -48,7 +52,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from llm.answer import ABSTAIN, answer_question, check_answer
-from llm.client import LLMClient, make_client
+from llm.client import LLMClient, LLMError, make_client
 from retrieval import structured as st
 from retrieval.hybrid import Retriever
 from retrieval.text_search import tokenize
@@ -85,9 +89,10 @@ REJECT_PREMISE = re.compile(
 ANSWER_FIELDS = ["repo", "model", "settings", "condition", "qid", "question_type", "question", "expected",
                  "answer", "llm_called", "correct", "abstained", "safe", "confidently_wrong", "success",
                  "citations", "invalid_citations", "unverified_identifiers", "prompt_tokens", "output_tokens",
-                 "seconds"]
+                 "seconds", "outcome", "generation_failed", "error"]
 SUMMARY_FIELDS = ["repo", "model", "settings", "condition", "question_type", "metric", "k", "n", "rate",
-                  "ci_low", "ci_high", "b", "c", "p_value"]
+                  "ci_low", "ci_high", "b", "c", "p_value", "generation_failed"]
+OUTCOMES = ["correct", "safe", "abstained", "confidently_wrong", "generation_failed"]
 
 
 # ---------- questions ----------
@@ -224,21 +229,48 @@ def _b(x) -> str:
     return "" if x is None else str(int(bool(x)))
 
 
+def outcome_of(r: dict) -> str:
+    if r.get("generation_failed") == "1":
+        return "generation_failed"
+    if r["correct"] == "1":
+        return "correct"
+    if r["safe"] == "1":
+        return "safe"
+    return "abstained" if r["abstained"] == "1" and r["correct"] != "" else "confidently_wrong"
+
+
+def _upgrade(r: dict) -> dict:
+    """Rows saved before generation_failed existed: same answers and scores, new columns filled in."""
+    r.setdefault("generation_failed", "0")
+    r.setdefault("error", "")
+    if not r.get("outcome"):
+        r["outcome"] = outcome_of(r)
+    return r
+
+
 def load_answers(path: Path) -> list[dict]:
     if not path.exists():
         return []
     with path.open(newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f))
+        return [_upgrade(r) for r in csv.DictReader(f)]
 
 
 def append_answer(path: Path, row: dict):
     path.parent.mkdir(parents=True, exist_ok=True)
     new = not path.exists()
+    if not new:
+        with path.open(newline="", encoding="utf-8") as f:
+            header = next(csv.reader(f), [])
+        if header != ANSWER_FIELDS:  # older file: rewrite once with the new columns, answers unchanged
+            old = load_answers(path)
+            tmp = path.with_suffix(".tmp")
+            write_rows(tmp, ANSWER_FIELDS, old)
+            tmp.replace(path)
     with path.open("a", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=ANSWER_FIELDS)
         if new:
             w.writeheader()
-        w.writerow(row)
+        w.writerow({**row, "outcome": outcome_of(row)} if "outcome" not in row else row)
 
 
 def run_repo(repo: str, questions: list[dict], client: LLMClient, answers_path: Path, settings: str,
@@ -253,8 +285,17 @@ def run_repo(repo: str, questions: list[dict], client: LLMClient, answers_path: 
                 if (repo, client.model, cond, q["question"]) in done:
                     continue
                 t0 = time.time()
-                res = ask(conn, repo, q["question"], cond, client, retriever)
-                s = score(q, res["answer"], res.get("abstained", False) and not res["llm_called"])
+                error = ""
+                try:
+                    res = ask(conn, repo, q["question"], cond, client, retriever)
+                    s = score(q, res["answer"], res.get("abstained", False) and not res["llm_called"])
+                except LLMError as e:  # one failed generation must not stop the run
+                    error = str(e)[:500]
+                    res = {"answer": "", "llm_called": True, "citations": [], "invalid_citations": [],
+                           "unverified_identifiers": []}
+                    answerable = q["question_type"] in ANSWERABLE
+                    s = {"correct": False if answerable else None, "abstained": False,
+                         "safe": None if answerable else False, "confidently_wrong": False, "success": False}
                 usage = res.get("usage") or {}
                 append_answer(answers_path, {
                     "repo": repo, "model": client.model, "settings": settings, "condition": cond, "qid": q["qid"],
@@ -265,9 +306,10 @@ def run_repo(repo: str, questions: list[dict], client: LLMClient, answers_path: 
                     "citations": " ".join(res["citations"]), "invalid_citations": " ".join(res["invalid_citations"]),
                     "unverified_identifiers": " ".join(res["unverified_identifiers"]),
                     "prompt_tokens": usage.get("prompt_tokens") or "", "output_tokens": usage.get("output_tokens") or "",
-                    "seconds": round(time.time() - t0, 1)})
+                    "seconds": round(time.time() - t0, 1), "generation_failed": _b(bool(error)), "error": error})
                 new += 1
-                say(f"  {repo} {cond:12s} {q['qid']:18s} success={_b(s['success'])} ({time.time() - t0:.0f}s)")
+                say(f"  {repo} {cond:12s} {q['qid']:18s} success={_b(s['success'])} ({time.time() - t0:.0f}s)"
+                    + (f" GENERATION FAILED: {error[:120]}" if error else ""))
     finally:
         conn.close()
     return new
@@ -299,9 +341,10 @@ def summarise(rows: list[dict]) -> list[dict]:
                     sel = [r for r in crows if r["question_type"] in types]
                     if not sel or (qtype in GROUPS and len(types) == 1):
                         continue
-                    base = {"repo": repo, "model": model, "settings": settings, "condition": cond,
-                            "question_type": qtype}
                     n = len(sel)
+                    failed = sum(r["generation_failed"] == "1" for r in sel)
+                    base = {"repo": repo, "model": model, "settings": settings, "condition": cond,
+                            "question_type": qtype, "generation_failed": failed}
                     ans = [r for r in sel if r["correct"] != ""]
                     ctl = [r for r in sel if r["safe"] != ""]
                     if ans:
@@ -315,6 +358,7 @@ def summarise(rows: list[dict]) -> list[dict]:
                                      sum(bool(r["unverified_identifiers"]) for r in sel), n))
                     out.append(_prop(base, "any_citation", sum(bool(r["citations"]) for r in sel), n))
                     out.append(_prop(base, "llm_called", sum(r["llm_called"] == "1" for r in sel), n))
+                    out.append(_prop(base, "generation_failed", failed, n))
             # exact McNemar on per-question success, paired by question
             success = {(r["repo"], r["condition"], r["question"]): r["success"] == "1" for r in rrows}
             qkeys = {(r["repo"], r["question"], r["question_type"]) for r in rrows}

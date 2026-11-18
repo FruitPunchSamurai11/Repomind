@@ -150,3 +150,81 @@ def test_memory_copy_is_private_and_injection_reaches_the_evidence(tmp_path):
     assert rows[0]["injection_in_evidence"] == 1 and rows[0]["followed"] == 1
     summary = inj.summarise(rows)
     assert summary[0]["followed"] == 1 and summary[0]["model"] == "fake-1"
+
+
+# ---------- a failed generation must not stop the run ----------
+
+def _flaky(fail_when):
+    def responder(system, user):
+        if fail_when(system, user):
+            raise LLMError('Ollama request failed (HTTP 500: {"error":"prediction aborted, token repeat limit reached"}).')
+        return "I don't know."
+    return FakeClient(responder=responder, model="fake-1")
+
+
+def test_llm_error_is_recorded_as_generation_failed_and_the_run_continues(tmp_path, monkeypatch):
+    conn, repo = _fixture_db(tmp_path)
+    monkeypatch.setattr(le, "connect_ro", lambda: _copy(conn))
+    qs = le.make_questions(_copy(conn), repo)
+    client = _flaky(lambda s, u: "must always give" in s)          # every forced_guess call fails
+    out = tmp_path / "answers.csv"
+    assert le.run_repo(repo, qs, client, out, "s", say=lambda m: None) == len(qs) * 3
+    rows = le.load_answers(out)
+    failed = [r for r in rows if r["generation_failed"] == "1"]
+    assert len(failed) == len(qs) and all(r["condition"] == "forced_guess" for r in failed)
+    for r in failed:
+        assert r["outcome"] == "generation_failed" and "token repeat limit" in r["error"]
+        assert r["success"] == "0" and r["abstained"] == "0" and r["confidently_wrong"] == "0"
+    assert all(r["outcome"] == "safe" for r in rows if r["condition"] == "closed_book")
+    assert le.run_repo(repo, qs, client, out, "s", say=lambda m: None) == 0       # failures are not retried
+    summary = le.summarise(rows)
+    get = lambda cond, t, m: next(r for r in summary if (r["condition"], r["question_type"], r["metric"]) == (cond, t, m))
+    assert get("forced_guess", "controls", "generation_failed")["k"] == len(qs)
+    assert get("forced_guess", "controls", "safe_control")["k"] == 0
+    assert get("forced_guess", "controls", "confidently_wrong")["k"] == 0
+    assert get("forced_guess", "all", "any_citation")["generation_failed"] == len(qs)   # column on every row
+    assert get("closed_book", "all", "any_citation")["generation_failed"] == 0
+
+
+def test_answerable_failure_counts_as_not_correct(tmp_path, monkeypatch):
+    conn, repo = _fixture_db(tmp_path)
+    monkeypatch.setattr(le, "connect_ro", lambda: _copy(conn))
+    q = [{"qid": "pr_about-0", "question_type": "pr_about", "question": "What is pull request #1 about?",
+          "expected": "t"}]
+    out = tmp_path / "a.csv"
+    le.run_repo(repo, q, _flaky(lambda s, u: True), out, "s", conditions=["closed_book"], say=lambda m: None)
+    r = le.load_answers(out)[0]
+    assert (r["correct"], r["abstained"], r["safe"], r["outcome"]) == ("0", "0", "", "generation_failed")
+    acc = next(x for x in le.summarise([r]) if x["metric"] == "accuracy")
+    assert (acc["k"], acc["n"]) == (0, 1)
+
+
+def test_old_answers_file_is_upgraded_in_place_and_kept(tmp_path, monkeypatch):
+    conn, repo = _fixture_db(tmp_path)
+    monkeypatch.setattr(le, "connect_ro", lambda: _copy(conn))
+    qs = le.make_questions(_copy(conn), repo)
+    out = tmp_path / "answers.csv"
+    old_fields = le.ANSWER_FIELDS[:le.ANSWER_FIELDS.index("seconds") + 1]       # header before this change
+    old = {f: "" for f in old_fields}
+    old.update(repo=repo, model="fake-1", settings="s", condition="rag", qid=qs[0]["qid"],
+               question_type=qs[0]["question_type"], question=qs[0]["question"], answer="I don't know.",
+               llm_called="1", abstained="1", safe="1", confidently_wrong="0", success="1")
+    from evaluation.stats import write_rows
+    write_rows(out, old_fields, [old])
+    n = le.run_repo(repo, qs, _flaky(lambda s, u: False), out, "s", say=lambda m: None)
+    assert n == len(qs) * 3 - 1                                                   # the saved answer is reused
+    rows = le.load_answers(out)
+    first = rows[0]
+    assert first["answer"] == "I don't know." and first["outcome"] == "safe" and first["generation_failed"] == "0"
+    with out.open(encoding="utf-8") as f:
+        assert f.readline().strip().split(",") == le.ANSWER_FIELDS
+
+
+def test_injection_records_generation_failed(tmp_path):
+    conn, repo = _fixture_db(tmp_path)
+    client = _flaky(lambda s, u: True)
+    rows = inj.ask_all(conn, repo, [(1, "overt")], client, "injected", "s", say=lambda m: None)
+    r = rows[0]
+    assert r["generation_failed"] == 1 and r["followed"] == 0 and r["outcome"] == "generation_failed"
+    assert "token repeat limit" in r["error"]
+    assert inj.summarise(rows)[0]["generation_failed"] == 1

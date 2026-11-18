@@ -24,23 +24,39 @@ def load_repository(conn: sqlite3.Connection, processed_dir: Path):
         )
 
 
-def load_developers(conn: sqlite3.Connection, processed_dir: Path) -> int:
-    n = 0
+DEV_COLS = "developer_id, github_login, display_name, email_hash, is_bot, identity_confidence, identity_sources"
+
+
+def load_developers(conn: sqlite3.Connection, processed_dir: Path, stats: dict | None = None) -> int:
+    """Developer ids are scoped per repository (normalization.identity), so a row is only ever
+    written by its own repository. A row that already exists with DIFFERENT attributes means an
+    unscoped id is shared with another repository (the old, load-order-dependent behaviour); such
+    rows are counted in stats["developer_conflicts"] so load_all can report them."""
+    n = conflicts = 0
     for d in _read_jsonl(processed_dir / "developers.jsonl"):
-        conn.execute(
-            "INSERT OR REPLACE INTO developer VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (
-                d["developer_id"],
-                d.get("github_login"),
-                d.get("display_name"),
-                d.get("email_hash"),
-                int(d.get("is_bot", False)),
-                d.get("identity_confidence"),
-                json.dumps(d.get("identity_sources", [])),
-            ),
-        )
+        row = (d["developer_id"], d.get("github_login"), d.get("display_name"), d.get("email_hash"),
+               int(d.get("is_bot", False)), d.get("identity_confidence"), json.dumps(d.get("identity_sources", [])))
+        old = conn.execute(f"SELECT {DEV_COLS} FROM developer WHERE developer_id = ?", (row[0],)).fetchone()
+        if old is not None and tuple(old) != row:
+            conflicts += 1
+        conn.execute("INSERT OR REPLACE INTO developer VALUES (?, ?, ?, ?, ?, ?, ?)", row)
         n += 1
+    if stats is not None:
+        stats["developer_conflicts"] = conflicts
     return n
+
+
+def prune_orphan_developers(conn: sqlite3.Connection) -> int:
+    """Delete developer rows no commit, issue, PR or review refers to (e.g. rows left by an
+    earlier id scheme after every repository has been reloaded)."""
+    cur = conn.execute(
+        """DELETE FROM developer WHERE developer_id NOT IN (
+             SELECT author_developer_id FROM commit_ WHERE author_developer_id IS NOT NULL
+             UNION SELECT committer_developer_id FROM commit_ WHERE committer_developer_id IS NOT NULL
+             UNION SELECT author_developer_id FROM issue WHERE author_developer_id IS NOT NULL
+             UNION SELECT author_developer_id FROM pull_request WHERE author_developer_id IS NOT NULL
+             UNION SELECT reviewer_developer_id FROM review WHERE reviewer_developer_id IS NOT NULL)""")
+    return cur.rowcount
 
 
 def load_files(conn: sqlite3.Connection, processed_dir: Path) -> int:
@@ -164,8 +180,9 @@ def load_labels(conn: sqlite3.Connection, processed_dir: Path) -> int:
 def load_all(conn: sqlite3.Connection, processed_dir: Path) -> dict:
     processed_dir = Path(processed_dir)
     load_repository(conn, processed_dir)
+    dev_stats: dict = {}
     counts = {
-        "developers": load_developers(conn, processed_dir),
+        "developers": load_developers(conn, processed_dir, dev_stats),
         "files": load_files(conn, processed_dir),
         "commits": load_commits(conn, processed_dir),
         "commit_files": load_commit_files(conn, processed_dir),
@@ -174,5 +191,7 @@ def load_all(conn: sqlite3.Connection, processed_dir: Path) -> dict:
         "reviews": load_reviews(conn, processed_dir),
         "labels": load_labels(conn, processed_dir),
     }
+    counts["developer_conflicts"] = dev_stats["developer_conflicts"]
+    counts["orphan_developers_pruned"] = prune_orphan_developers(conn)
     conn.commit()
     return counts

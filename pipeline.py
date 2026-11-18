@@ -67,7 +67,7 @@ def run(repo: str, skip_github: bool = False):
     # Stage 3: Normalization
     print("[3/5] Normalization & identity resolution ...")
     t0 = time.time()
-    resolver = IdentityResolver()
+    resolver = IdentityResolver(scope=f"{owner}/{name}")  # developer ids are per repository
     git_result = normalize_git(commits_path, owner, name, resolver)
 
     github_dir = DATA_RAW / name / "github"

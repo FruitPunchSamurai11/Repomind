@@ -203,6 +203,7 @@ def run_repo(repo: str, n_boot: int, seed: int) -> dict:
     finally:
         conn.close()
     cases, info = cases_for_repo(repo, commits)
+    cases.sort(key=lambda c: (c["cutoff"], c["component"]))  # stable case files (component sets have no order)
     write_rows(CASES_DIR / f"{slug(repo)}.csv", CASE_FIELDS, cases)
     row = summarise(repo, cases, n_boot, seed)
     cuts = info["cutoffs"]

@@ -2,6 +2,7 @@
 AUC, percentile bootstrap, read-only DB access, per-repo CSV upserts."""
 import csv
 import os
+import json
 import random
 import sqlite3
 import time
@@ -57,11 +58,29 @@ def percentile(values: list[float], q: float) -> float | None:
     return v[lo] + (v[hi] - v[lo]) * (pos - lo)
 
 
+def _canon(x):
+    """Order-free, type-free form of a unit, matching how write_rows stores it (fmt), so the same
+    cases sort identically whether they come from memory (ints, floats) or from a CSV (strings)."""
+    if isinstance(x, dict):
+        return sorted((str(k), _canon(v)) for k, v in x.items())
+    if isinstance(x, (list, tuple, set, frozenset)):
+        return sorted((_canon(v) for v in x), key=json.dumps)
+    return fmt(x)
+
+
+def canonical_order(units: list) -> list:
+    """Units in a fixed order, so a seeded bootstrap gives identical intervals whatever order the
+    caller built them in (dict/set iteration, file order, ...)."""
+    return sorted(units, key=lambda u: json.dumps(_canon(u)))
+
+
 def bootstrap(units: list, stat: Callable[[list], dict], n_boot: int = 1000, seed: int = 0) -> dict:
     """Percentile bootstrap. `units` are resampled with replacement (clusters
     for a cluster bootstrap, queries for a paired bootstrap); `stat` maps a
     resampled list of units to {name: value or None}. Returns
-    {name: (lo, hi)} 95% intervals, ignoring resamples where a value is None."""
+    {name: (lo, hi)} 95% intervals, ignoring resamples where a value is None.
+    Units are put in canonical order first, so the result does not depend on input order."""
+    units = canonical_order(units)
     rng = random.Random(seed)
     draws: dict[str, list[float]] = {}
     for _ in range(n_boot):
@@ -75,7 +94,9 @@ def bootstrap(units: list, stat: Callable[[list], dict], n_boot: int = 1000, see
 def bootstrap_stratified(groups: list[list], stat: Callable[[list], dict], n_boot: int = 1000,
                          seed: int = 0) -> dict:
     """Like `bootstrap`, but resamples within each group (e.g. queries within
-    each repo) so every repo keeps its size in every resample."""
+    each repo) so every repo keeps its size in every resample. Groups and their members are
+    put in canonical order first."""
+    groups = canonical_order([canonical_order(g) for g in groups])
     rng = random.Random(seed)
     draws: dict[str, list[float]] = {}
     for _ in range(n_boot):

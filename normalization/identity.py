@@ -41,11 +41,25 @@ def stable_id(*parts: str) -> str:
 
 
 class IdentityResolver:
-    def __init__(self):
+    """Resolves Git/GitHub identities within ONE repository.
+
+    `scope` (the repository id) is mixed into every developer_id, so the same person
+    gets a different developer row per repository. The shared database therefore
+    never holds a row whose attributes (display name, identity confidence, sources)
+    came from another repository's resolution: each repository's results depend
+    only on its own data, not on the order repositories are loaded in.
+    scope=None keeps the old unscoped ids (tests, ad-hoc use).
+    email_hash stays unscoped: it is a hash of the address, the same everywhere."""
+
+    def __init__(self, scope: Optional[str] = None):
+        self.scope = scope
         self._by_login: dict[str, str] = {}
         self._by_email: dict[str, str] = {}
         self._by_name_only: dict[str, str] = {}
         self.developers: dict[str, dict] = {}
+
+    def _id(self, *parts: str) -> str:
+        return stable_id("dev", self.scope, *parts) if self.scope else stable_id(*parts)
 
     def _new_developer(self, dev_id, login, name, email_norm, confidence, source, bot):
         self.developers[dev_id] = {
@@ -70,13 +84,13 @@ class IdentityResolver:
         elif not email_norm and name and name in self._by_name_only:
             dev_id = self._by_name_only[name]
         elif login:
-            dev_id = stable_id("login", login)
+            dev_id = self._id("login", login)
             self._new_developer(dev_id, login, name, email_norm, "high", "git_noreply_email", bot)
         elif email_norm:
-            dev_id = stable_id("email", email_norm)
+            dev_id = self._id("email", email_norm)
             self._new_developer(dev_id, None, name, email_norm, "medium", "git_email", bot)
         else:
-            dev_id = stable_id("name", name or "unknown")
+            dev_id = self._id("name", name or "unknown")
             self._new_developer(dev_id, None, name, None, "low", "git_name_only", bot)
 
         if login:
@@ -99,7 +113,7 @@ class IdentityResolver:
         if login in self._by_login:
             return self._by_login[login]
 
-        dev_id = stable_id("login", login)
+        dev_id = self._id("login", login)
         self._new_developer(dev_id, login, login, None, "medium", "github_login_only", bot)
         self._by_login[login] = dev_id
         return dev_id

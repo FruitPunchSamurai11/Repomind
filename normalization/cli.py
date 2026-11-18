@@ -36,7 +36,7 @@ def main():
     raw_dir = Path(args.data_dir) / name
     out_dir = Path(args.out_dir) / name
 
-    resolver = IdentityResolver()
+    resolver = IdentityResolver(scope=args.repo)  # developer ids are per repository
 
     print(f"[normalize] reading raw git commits for {args.repo} ...")
     git_result = normalize_git(raw_dir / "commits.jsonl", owner, name, resolver)

@@ -29,6 +29,7 @@ from collections import Counter, defaultdict
 
 from analysis.bus_factor import assess_component
 from analysis.data import load_activity
+from analysis.exclusions import describe as describe_exclusion
 from analysis.features import build_features
 from evaluation.experiments import _hhi, _rho
 from evaluation.stats import RESULTS, connect_ro, read_rows, slug, upsert_row
@@ -39,7 +40,7 @@ BOUND = "lower bound: only sampled commits are merged"
 FIELDS = ["repo", "status", "attributed_human_commits", "developer_ids_mapped", "reference_accounts",
           "developer_ids_merged_away", "conflicting_developer_ids", "rho_files_hhi", "files_compared",
           "rho_components_hhi", "components_compared", "risk_components", "risk_levels_changed",
-          "risk_level_changes", "bound"]
+          "risk_level_changes", "bound", "path_exclusion", "excluded_files"]
 
 
 def reference_mapping(cases: list[dict], dev_logins: dict[str, str | None]) -> tuple[dict, int]:
@@ -96,6 +97,7 @@ def run(repo: str) -> dict:
             """SELECT DISTINCT d.developer_id, d.github_login FROM developer d
                JOIN commit_ c ON c.author_developer_id = d.developer_id WHERE c.repository_id = ?""", (repo,))}
         activity = load_activity(conn, repo)
+        row.update(describe_exclusion(conn, repo))
     finally:
         conn.close()
     mapping, conflicts = reference_mapping(cases, dev_logins)

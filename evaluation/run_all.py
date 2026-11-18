@@ -24,6 +24,8 @@ Usage:
     python -m evaluation.run_all --repos repos_round2.txt
     python -m evaluation.run_all --repos repos_round2.txt --only sindresorhus/ora
     python -m evaluation.run_all --repos repos_round2.txt --stages 0a_git,1_normalize
+    # re-run analysis stages without invalidating stages that do not depend on them:
+    python -m evaluation.run_all --repos repos_round2.txt --stages 4_concentration,5_risk --preserve d_retrieval,d_attribution
 """
 import argparse
 import csv
@@ -158,7 +160,8 @@ def run_stage(repo: str, stage: str, module: str, retries: int, timeout: float |
     return False
 
 
-def run_repo(repo: str, stages: list[tuple[str, str]], retries: int, timeout: float | None) -> bool:
+def run_repo(repo: str, stages: list[tuple[str, str]], retries: int, timeout: float | None,
+             preserve: frozenset = frozenset()) -> bool:
     (MARKER_DIR / slug(repo)).mkdir(parents=True, exist_ok=True)
     all_names = [s for s, _ in STAGES]
     for stage, module in stages:
@@ -166,7 +169,8 @@ def run_repo(repo: str, stages: list[tuple[str, str]], retries: int, timeout: fl
             say(f"{repo:35s} {stage:16s} SKIP  (already done)")
             continue
         for later in all_names[all_names.index(stage) + 1:]:  # invalidate downstream results
-            marker(repo, later).unlink(missing_ok=True)
+            if later not in preserve:  # --preserve: stages known not to depend on this one
+                marker(repo, later).unlink(missing_ok=True)
         if not run_stage(repo, stage, module, retries, timeout):
             say(f"{repo:35s} later stages skipped for this repo")
             return False
@@ -194,6 +198,8 @@ def main():
     p.add_argument("--stages", default=None, help=f"comma-separated subset of {[s for s, _ in STAGES]}")
     p.add_argument("--retries", type=int, default=1, help="retries per failing stage (60 s apart)")
     p.add_argument("--stage-timeout", type=float, default=None, help="seconds; default no limit")
+    p.add_argument("--preserve", default="", help="comma-separated stages whose markers are never invalidated "
+                                                  "(only for stages that do not depend on the ones being re-run)")
     args = p.parse_args()
 
     repos = read_repos(Path(args.repos))
@@ -210,13 +216,16 @@ def main():
         if unknown:
             raise SystemExit(f"unknown stage(s): {sorted(unknown)}")
         stages = [s for s in STAGES if s[0] in wanted]
+    preserve = frozenset(x for x in args.preserve.split(",") if x)
+    if preserve - {s for s, _ in STAGES}:
+        raise SystemExit(f"unknown stage(s) in --preserve: {sorted(preserve - {s for s, _ in STAGES})}")
 
     say(f"run_all: {len(repos)} repo(s), stages {[s for s, _ in stages]}")
     t0 = time.time()
     ok, failed = [], []
     for repo in repos:
         try:
-            (ok if run_repo(repo, stages, args.retries, args.stage_timeout) else failed).append(repo)
+            (ok if run_repo(repo, stages, args.retries, args.stage_timeout, preserve) else failed).append(repo)
         except Exception as e:  # never let one repo stop the batch
             say(f"{repo:35s} runner error: {e!r}")
             record_failure({"time": now(), "repo": repo, "stage": "runner", "exit_code": "",

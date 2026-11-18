@@ -1,10 +1,14 @@
 """Load the raw activity rows every Module 4 metric works from.
 
 One query per signal, all bot-filtered the same way, so metrics never
-disagree about which activity they are looking at.
+disagree about which activity they are looking at. Paths under vendored /
+third-party directories are dropped by the rule in analysis/exclusions.py
+(configurable; recorded in every output).
 """
 import sqlite3
 from datetime import datetime, timezone
+
+from analysis.exclusions import active_dirs, is_excluded
 
 
 def parse_ts(ts: str) -> datetime:
@@ -12,7 +16,9 @@ def parse_ts(ts: str) -> datetime:
     return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
-def load_activity(conn: sqlite3.Connection, repository_id: str, include_bots: bool = False) -> dict:
+def load_activity(conn: sqlite3.Connection, repository_id: str, include_bots: bool = False,
+                  exclude_dirs: tuple[str, ...] | None = None) -> dict:
+    """exclude_dirs: None = the configured rule (analysis.exclusions), () = keep every path."""
     bot = "" if include_bots else "AND d.is_bot = 0"
 
     commits = conn.execute(
@@ -68,9 +74,11 @@ def load_activity(conn: sqlite3.Connection, repository_id: str, include_bots: bo
         (repository_id,),
     ).fetchall()
 
+    dirs = active_dirs() if exclude_dirs is None else exclude_dirs
+    keep = lambda rows, idx: [tuple(r) for r in rows if not is_excluded(r[idx], dirs)]
     return {
-        "commits": [tuple(r) for r in commits],
-        "pr_authored": [tuple(r) for r in pr_authored],
-        "reviewed": [tuple(r) for r in reviewed],
-        "issues_resolved": [tuple(r) for r in issues_resolved],
+        "commits": keep(commits, 3),
+        "pr_authored": keep(pr_authored, 2),
+        "reviewed": keep(reviewed, 2),
+        "issues_resolved": keep(issues_resolved, 2),
     }

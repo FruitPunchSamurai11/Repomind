@@ -11,6 +11,7 @@ from pathlib import Path
 
 from analysis.bus_factor import LEVEL_ORDER, assess_component
 from analysis.data import load_activity
+from analysis.exclusions import describe as describe_exclusion
 from analysis.features import build_features
 from database.connection import get_connection
 
@@ -125,6 +126,7 @@ def main():
                     "departed_threshold": args.departed_threshold,
                     "min_commits": args.min_commits,
                     "include_bots": args.include_bots,
+                    **describe_exclusion(conn, repository_id),
                 },
                 "note": WORDING,
                 "level_counts": dict(counts),

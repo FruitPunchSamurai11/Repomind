@@ -49,6 +49,7 @@ from datetime import datetime, timedelta, timezone
 
 from analysis.bus_factor import assess_component
 from analysis.data import parse_ts
+from analysis.exclusions import active_dirs, describe as describe_exclusion, is_excluded
 from analysis.features import component_of
 from evaluation.stats import (POOLED, RESULTS, auc, bootstrap, connect_ro, read_rows, slug,
                               upsert_row, write_rows)
@@ -68,7 +69,8 @@ STAT_KEYS = (["cases", "components", "base_loss_rate", "n_high", "n_medium", "n_
              + ["rr_high_low", "rr_high_low_lo", "rr_high_low_hi"]
              + [f"auc_{p}{s}" for p in PREDICTORS for s in ("", "_lo", "_hi")]
              + [f"diff_rule_minus_{p}{s}" for p in PREDICTORS[1:] for s in ("", "_lo", "_hi")])
-REPO_KEYS = ["cutoffs", "first_cutoff", "last_cutoff", "skipped_dormant", "skipped_insufficient"]
+REPO_KEYS = ["cutoffs", "first_cutoff", "last_cutoff", "skipped_dormant", "skipped_insufficient",
+             "path_exclusion", "excluded_files"]
 FIELDS = (["repo", "status"] + REPO_KEYS + STAT_KEYS + [VARIANT + k for k in STAT_KEYS]
           + ["bootstrap", "seed"])
 
@@ -81,7 +83,10 @@ def load_commits(conn, repo: str) -> list[tuple[datetime, str, set[str]]]:
            JOIN developer d ON d.developer_id = c.author_developer_id
            WHERE c.repository_id = ? AND d.is_bot = 0""", (repo,)).fetchall()
     by_commit: dict[str, list] = {}
+    dirs = active_dirs()
     for cid, dev, ts, path in rows:
+        if is_excluded(path, dirs):  # vendored / third-party code (analysis/exclusions.py)
+            continue
         entry = by_commit.setdefault(cid, [parse_ts(ts), dev, set()])
         entry[2].add(component_of(path, DEPTH))
     return sorted((tuple(v) for v in by_commit.values()), key=lambda c: c[0])
@@ -194,6 +199,7 @@ def run_repo(repo: str, n_boot: int, seed: int) -> dict:
     conn = connect_ro()
     try:
         commits = load_commits(conn, repo)
+        exclusion = describe_exclusion(conn, repo)
     finally:
         conn.close()
     cases, info = cases_for_repo(repo, commits)
@@ -202,7 +208,7 @@ def run_repo(repo: str, n_boot: int, seed: int) -> dict:
     cuts = info["cutoffs"]
     row.update(cutoffs=len(cuts), first_cutoff=cuts[0].date().isoformat() if cuts else "",
                last_cutoff=cuts[-1].date().isoformat() if cuts else "",
-               skipped_dormant=info["skipped_dormant"], skipped_insufficient=info["skipped_insufficient"])
+               skipped_dormant=info["skipped_dormant"], skipped_insufficient=info["skipped_insufficient"], **exclusion)
     if not commits:
         row["status"] = "no commits in database"
     elif not cuts:

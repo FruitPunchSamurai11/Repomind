@@ -20,6 +20,7 @@ import re
 from datetime import datetime
 
 from analysis.data import load_activity
+from analysis.exclusions import describe as describe_exclusion
 from assist.evaluate import cochange_eval
 from evaluation import experiments as ex
 from evaluation.metrics import dataset_stats
@@ -30,7 +31,7 @@ SQUASH_SUBJECT = re.compile(r"\(#\d+\)\s*$")
 TABLES = {
     "dataset": ["repo", "commits", "first_commit", "last_commit", "span_years", "files",
                 "committer_identities", "bot_identities", "bot_commit_share", "issues", "pull_requests",
-                "reviews", "validation_ok", "validation_issue_count"],
+                "reviews", "validation_ok", "validation_issue_count", "path_exclusion", "excluded_files"],
     "linkage": ["repo", "human_commits_linked_share", "top10_committers_linked", "pr_file_link_rate",
                 "review_file_link_rate", "merge_commit_share", "commits_without_files_share",
                 "non_merge_commits", "squash_subject_share"],
@@ -39,9 +40,11 @@ TABLES = {
                       "ranked_components", "median_neff_components", "components_top_share_ge80",
                       "rho_halflife_90_vs_365", "rho_halflife_365_vs_1095", "rho_halflife_90_vs_1095",
                       "rho_with_vs_without_bots", "files_top_committer_changes_with_bots", "files_compared_bots",
-                      "rho_conservative_vs_name_merged", "identities_merged_away_by_name"],
+                      "rho_conservative_vs_name_merged", "identities_merged_away_by_name",
+                      "path_exclusion", "excluded_files"],
     "risk": ["repo", "components", "assessable_components", "high", "medium", "low", "dormant",
-             "insufficient_evidence", "agreement_with_180d", "agreement_with_730d", "high_at_180d", "high_at_730d"],
+             "insufficient_evidence", "agreement_with_180d", "agreement_with_730d", "high_at_180d", "high_at_730d",
+             "path_exclusion", "excluded_files"],
     "cochange": ["repo", "status"] + [f"{k}_{v}" for v in ("all", "noboiler")
                                        for k in ("cases", "coverage", "hit5_cochange", "hit5_popularity",
                                                  "precision_cochange", "precision_popularity")] + ["k"],
@@ -136,6 +139,8 @@ def run(table: str, repo: str) -> dict:
         if not conn.execute("SELECT 1 FROM repository WHERE repository_id=?", (repo,)).fetchone():
             raise SystemExit(f"{repo} is not in the database (run stages 0a-2 first)")
         row = EXPORTERS[table](conn, repo)
+        if "path_exclusion" in TABLES[table]:  # tables built on Module 4/5 activity record the rule
+            row.update(describe_exclusion(conn, repo))
     finally:
         conn.close()
     upsert_row(RESULTS / f"{table}.csv", TABLES[table], row)

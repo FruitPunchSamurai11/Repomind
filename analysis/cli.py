@@ -12,6 +12,7 @@ from pathlib import Path
 
 from analysis.compare import spearman
 from analysis.data import load_activity
+from analysis.exclusions import describe as describe_exclusion
 from analysis.features import build_features
 from analysis.knowledge_score import DEFAULT_WEIGHTS, component_metrics
 from analysis.recency import DEFAULT_HALF_LIFE_DAYS
@@ -104,6 +105,7 @@ def main():
             "half_life_days": args.half_life,
             "min_commits": args.min_commits,
             "include_bots": args.include_bots,
+            **describe_exclusion(conn, repository_id),
             "signal_weights": DEFAULT_WEIGHTS,
         },
         "note": "knowledge_score and metric E are research hypotheses, not measurements of expertise; see docs/METRICS.md",

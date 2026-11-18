@@ -1,0 +1,5 @@
+repo,labeller,labelled,yes,no,unsure,blank,login_disagreements,repomind_linked,repomind_correct,repomind_precision,repomind_precision_lo,repomind_precision_hi,github_attributed,github_correct,github_precision,github_precision_lo,github_precision_hi,confirmed_attributed,repomind_coverage,note
+k3d-io/k3d,karthikeya,50,50,0,0,0,0,3,3,1.0000,0.4385,1.0000,50,50,1.0000,0.9286,1.0000,50,0.0600,"single labeller; AI pre-filled, verified by one author; 14 low-evidence identities checked on GitHub profiles"
+pallets/flask,karthikeya,50,50,0,0,0,0,1,1,1.0000,0.2065,1.0000,50,50,1.0000,0.9286,1.0000,50,0.0200,"single labeller; AI pre-filled, verified by one author; 14 low-evidence identities checked on GitHub profiles"
+psf/black,karthikeya,50,50,0,0,0,0,21,21,1.0000,0.8454,1.0000,50,50,1.0000,0.9286,1.0000,50,0.4200,"single labeller; AI pre-filled, verified by one author; 14 low-evidence identities checked on GitHub profiles"
+POOLED,karthikeya,150,150,0,0,0,0,25,25,1.0000,0.8668,1.0000,150,150,1.0000,0.9750,1.0000,150,0.1667,"single labeller; AI pre-filled, verified by one author; 14 low-evidence identities checked on GitHub profiles"

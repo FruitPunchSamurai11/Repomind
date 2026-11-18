@@ -34,7 +34,20 @@ Modules 4 and 5 (concentration, risk, backtest, identity merge) exclude vendored
 
 The values for the original 8 repos are close to the first submission's: flask 2.1%, black 25.3%, fastapi 13.5% (first submission 2%, 25%, 14%).
 Repos where GitHub attributes < 90%: requests 89.0%, sendgrid-go 69.5%, ripme 66.0%.
-Manual identity labels (Phase E) are not yet scored.
+Manual identity labels (Phase E) — `identity_labels.csv` (aggregate; the labelled sheet stays gitignored):
+
+| Against the labels | Pooled (150 commits: flask, black, k3d × 50) |
+|---|---|
+| Labels yes / no / unsure | 150 / 0 / 0 |
+| RepoMind link precision | **100%** (25/25) [86.7, 100]; per repo black 21/21, k3d 3/3, flask 1/1 |
+| GitHub attribution precision | **100%** (150/150) [97.5, 100] |
+| RepoMind coverage of confirmed GitHub attributions | 16.7% (25/150); black 42%, k3d 6%, flask 2% |
+
+- One labeller; no inter-rater agreement (κ) can be computed.
+- An AI assistant pre-filled the labels from public evidence (e-mail, login, commit history). One author verified them and checked all 14 low-evidence identities (41 commits) on their GitHub profiles.
+- All 150 sampled commits happened to be GitHub-attributed (the sample was not filtered on that), so the labels say nothing about commits GitHub leaves unattributed.
+- No label is negative, so the intervals are lower bounds on precision. The sample cannot show where either source errs.
+- RepoMind's 25 links are all to the same login GitHub attributes (0 disagreements).
 
 ## 3. Concentration and its sensitivity — `concentration.csv`
 | Per-repo value (min – median – max) | Round 2 (20) | First submission (8) |

@@ -180,3 +180,7 @@ Grep them for the specific term you need rather than reading them whole.
   - **SUMMARY:** old → new values and a "Reproducibility fixes" section.
   - **Paper:** `docs/paper/build_tables.py` → `docs/paper/tables/repos.tex`. 28 of 181 `\res` values in `docs/paper/main.tex` corrected; numbers only, all other text byte-identical.
   - **Next:** the `\fixme` items (manual labels, manual LLM check, data date, UI figure).
+- 2026-11-18 (Phase E scored): `evaluation/score_identity_labels.py` scores `identity_labelling/labels_karthikeya.csv` → aggregate `results/round2/identity_labels.csv` (sheet stays gitignored).
+  - Labelling: single labeller; AI pre-filled, verified by one author, who checked all 14 low-evidence identities (41 commits) on their GitHub profiles.
+  - Labels: 150 yes, 0 no, 0 unsure. RepoMind precision 25/25 [86.7, 100]; GitHub 150/150 [97.5, 100]; RepoMind coverage 16.7%. All sampled commits were GitHub-attributed. No κ (one labeller).
+  - Output: SUMMARY updated; RQ1 `\fixme` in `docs/paper/main.tex` filled. +2 tests (186 pass).

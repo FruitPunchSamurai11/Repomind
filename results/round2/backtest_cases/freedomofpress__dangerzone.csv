@@ -1,8 +1,8 @@
 repo,component,cutoff,level,active_devs,recent_commits,total_commits,next_year_commits,lost
 freedomofpress/dangerzone,(root),2022-12-31,low,9,65,221,166,0
+freedomofpress/dangerzone,share,2022-12-31,high,1,8,44,18,0
 freedomofpress/dangerzone,dev_scripts,2022-12-31,high,2,5,14,49,0
 freedomofpress/dangerzone,dangerzone,2022-12-31,medium,4,70,251,21,0
-freedomofpress/dangerzone,share,2022-12-31,high,1,8,44,18,0
 freedomofpress/dangerzone,assets,2022-12-31,high,1,1,7,0,1
 freedomofpress/dangerzone,install/linux,2022-12-31,high,3,5,31,22,0
 freedomofpress/dangerzone,install/macos,2022-12-31,low,3,5,37,14,0
@@ -14,9 +14,9 @@ freedomofpress/dangerzone,dangerzone/gui,2022-12-31,medium,2,79,151,53,0
 freedomofpress/dangerzone,container,2022-12-31,low,3,22,24,17,0
 freedomofpress/dangerzone,tests,2022-12-31,medium,2,27,27,26,0
 freedomofpress/dangerzone,(root),2023-12-31,low,8,166,387,159,0
+freedomofpress/dangerzone,share,2023-12-31,high,3,18,62,11,0
 freedomofpress/dangerzone,dev_scripts,2023-12-31,medium,3,49,63,64,0
 freedomofpress/dangerzone,dangerzone,2023-12-31,medium,2,21,272,25,0
-freedomofpress/dangerzone,share,2023-12-31,high,3,18,62,11,0
 freedomofpress/dangerzone,install/linux,2023-12-31,high,3,22,53,27,0
 freedomofpress/dangerzone,install/macos,2023-12-31,medium,3,14,51,2,0
 freedomofpress/dangerzone,install/pyinstaller,2023-12-31,high,2,3,20,1,1
@@ -32,9 +32,9 @@ freedomofpress/dangerzone,tests/gui,2023-12-31,low,3,16,16,18,0
 freedomofpress/dangerzone,dangerzone/conversion,2023-12-31,medium,3,54,54,23,0
 freedomofpress/dangerzone,tests/isolation_provider,2023-12-31,medium,2,10,10,34,0
 freedomofpress/dangerzone,(root),2024-12-31,low,10,159,546,156,0
+freedomofpress/dangerzone,share,2024-12-31,high,3,11,73,16,0
 freedomofpress/dangerzone,dev_scripts,2024-12-31,medium,6,64,127,38,0
 freedomofpress/dangerzone,dangerzone,2024-12-31,medium,7,25,297,65,0
-freedomofpress/dangerzone,share,2024-12-31,high,3,11,73,16,0
 freedomofpress/dangerzone,assets,2024-12-31,high,1,1,8,6,1
 freedomofpress/dangerzone,install/linux,2024-12-31,low,5,27,80,13,0
 freedomofpress/dangerzone,install/macos,2024-12-31,high,1,2,53,2,0

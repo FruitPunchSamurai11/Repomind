@@ -21,8 +21,8 @@ NLnetLabs/routinator,debian,2021-12-31,medium,1,1,8,0,1
 NLnetLabs/routinator,contrib/routinator-ui,2021-12-31,medium,2,11,11,0,1
 NLnetLabs/routinator,src/cache,2021-12-31,medium,2,17,17,0,1
 NLnetLabs/routinator,src/collector,2021-12-31,medium,3,113,113,17,0
-NLnetLabs/routinator,source/img,2021-12-31,medium,1,10,10,0,1
 NLnetLabs/routinator,source,2021-12-31,medium,3,281,281,44,0
+NLnetLabs/routinator,source/img,2021-12-31,medium,1,10,10,0,1
 NLnetLabs/routinator,source/resources,2021-12-31,medium,1,5,5,1,0
 NLnetLabs/routinator,src/http,2021-12-31,medium,2,29,29,16,0
 NLnetLabs/routinator,src/utils,2021-12-31,medium,1,19,19,23,0
@@ -36,8 +36,8 @@ NLnetLabs/routinator,src/collector,2022-12-31,medium,1,17,130,2,0
 NLnetLabs/routinator,source,2022-12-31,medium,2,44,325,0,1
 NLnetLabs/routinator,source/resources,2022-12-31,medium,1,1,6,0,1
 NLnetLabs/routinator,src/http,2022-12-31,medium,2,16,45,10,0
-NLnetLabs/routinator,pkg/common,2022-12-31,low,2,4,5,0,1
 NLnetLabs/routinator,pkg/rpm,2022-12-31,low,2,7,8,0,1
+NLnetLabs/routinator,pkg/common,2022-12-31,low,2,4,5,0,1
 NLnetLabs/routinator,src/utils,2022-12-31,medium,1,23,42,4,0
 NLnetLabs/routinator,doc/manual,2022-12-31,medium,4,113,113,26,0
 NLnetLabs/routinator,(root),2023-12-31,medium,5,49,1049,36,0

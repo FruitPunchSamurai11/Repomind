@@ -6,6 +6,9 @@ proportions; bootstrap (1,000 resamples, seed 0) for AUCs, loss rates and retrie
 Revision-1 numbers are not used (their code and results were never found). The data snapshot is newer than
 the first submission's (e.g. flask 5,557 → 5,566 commits, fastapi 7,713 → 8,128), so per-repo values can
 differ for that reason alone.
+Modules 4 and 5 (concentration, risk, backtest, identity merge) exclude vendored / third-party code since
+2026-11-18. The rule, the files excluded per repo, and every headline number it changed (old → new) are in
+"Vendored-code exclusion" at the end. The tables below show the values after the exclusion.
 
 ## 1. More repositories (Reviewer #1 a) — `dataset.csv`, `sample_chosen.csv`, `sample_log.csv`
 | | Round 2 | First submission |
@@ -26,8 +29,8 @@ differ for that reason alone.
 | RepoMind links the same commits (pooled) | 14.6% (517/3,538) | not measured |
 | Precision of RepoMind links vs GitHub (pooled) | **99.6%** [98.6, 99.9] (514/516) | not measured |
 | Coverage: GitHub-attributed commits RepoMind also links | **15.3%** [14.2, 16.6] | not measured |
-| Reference-account merge, ρ of file HHI rankings (lower bound) | median 1.000, min 0.518 (opentogethertube), 0.729 (k3d) | not measured |
-| Reference-account merge: ids merged away / risk levels changed (lower bound) | 22 ids; 28 of 970 component levels | not measured |
+| Reference-account merge, ρ of file HHI rankings (lower bound) | median 1.000, min 0.518 (opentogethertube), 0.825 (k3d) | not measured |
+| Reference-account merge: ids merged away / risk levels changed (lower bound) | 22 ids; 20 of 941 component levels | not measured |
 
 The values for the original 8 repos are close to the first submission's: flask 1.6%, black 24.7%, fastapi 13.2% (first submission 2%, 25%, 14%).
 Repos where GitHub attributes < 90%: requests 89.0%, sendgrid-go 69.5%, ripme 66.0%.
@@ -37,11 +40,11 @@ Manual identity labels (Phase E) are not yet scored.
 | Per-repo value (min – median – max) | Round 2 (20) | First submission (8) |
 |---|---|---|
 | Median effective contributors per file | 1.26 – 2.33 – 6.25 | 1.4 – 5.0 |
-| Files with top share ≥ 80% | 1.8% – 26.7% – 82.0% | 2% – 58% |
-| ρ commits vs multi-signal | 0.774 – 0.868 – 0.936 | 0.85 – 0.94 |
-| ρ half-life 90 vs 365 d | **−0.016** (sendgrid-go) – 0.812 – 0.974 | 0.28 (ora) – 0.92 |
-| ρ half-life 365 vs 1095 d | 0.372 – 0.885 – 0.968 | 0.69 – 0.97 |
-| ρ with vs without bots | 0.881 (faas-netes) – 0.996 – 1.000 | 0.96 – 1.00 |
+| Files with top share ≥ 80% | 1.8% – 28.0% – 82.0% | 2% – 58% |
+| ρ commits vs multi-signal | 0.737 (k3d) – 0.868 – 0.936 | 0.85 – 0.94 |
+| ρ half-life 90 vs 365 d | **−0.016** (sendgrid-go) – 0.811 – 0.947 | 0.28 (ora) – 0.92 |
+| ρ half-life 365 vs 1095 d | 0.580 (ripme) – 0.889 – 0.974 | 0.69 – 0.97 |
+| ρ with vs without bots | 0.935 (fastapi) – 0.996 – 1.000 | 0.96 – 1.00 |
 | ρ conservative vs name-merged identities | **0.520** (opentogethertube) – 0.985 – 1.000 | 0.98 – 1.00 |
 
 Original 8, ρ half-life 90 vs 365, round 2 vs first submission: flask 0.81/0.81, requests 0.61/0.61, ripgrep 0.92/0.92, cobra 0.56/0.56, ora 0.27/0.28.
@@ -49,24 +52,24 @@ Original 8, ρ half-life 90 vs 365, round 2 vs first submission: flask 0.81/0.81
 ## 4. Risk stability — `risk.csv`
 | | Round 2 (20) | First submission (8) |
 |---|---|---|
-| Level counts at W = 365 d (high / medium / low) | 90 / 225 / 54 (369 assessable) | 30 / 135 / 23 |
-| Agreement with W = 180 d (min – median – max) | 0% (sendgrid-go, 3 comps) – 72.5% – 100% | 13% (fastapi) – 100% |
-| Agreement with W = 730 d (min – median – max) | 33.3% (ripgrep) – 79.7% – 100% | 50% – 100% |
+| Level counts at W = 365 d (high / medium / low) | 82 / 221 / 50 (353 assessable) | 30 / 135 / 23 |
+| Agreement with W = 180 d (min – median – max) | 0% (sendgrid-go, 3 comps) – 71.4% – 100% | 13% (fastapi) – 100% |
+| Agreement with W = 730 d (min – median – max) | 33.3% (ripgrep) – 80.0% – 100% | 50% – 100% |
 
 **Changed:** in the first submission fastapi had the lowest @180 agreement (13%). It now has 84.4%.
 ripgrep went @180 40% → 86.6% and @730 80% → 33.3%. fastapi's high count went 8 → 15.
 
 ## 5. Temporal backtest (Reviewer #1 f) — `backtest.csv` (POOLED row; cases in `backtest_cases/`)
-2,211 component-years, 609 components, 136 cutoffs, 20 repos. Outcome A = all active developers lost within 365 days.
+2,136 component-years, 591 components, 136 cutoffs, 20 repos. Outcome A = all active developers lost within 365 days.
 Outcome B = the same, excluding component-years with zero commits in the following year.
 
 | | Outcome A | Outcome B |
 |---|---|---|
-| Cases (base loss rate) | 2,211 (35.4%) | 1,683 (15.1%) |
-| Loss rate: high / medium / low | 58.7% [52.5, 64.5] / 34.3% [31.3, 37.5] / 17.8% [14.4, 21.6] | 32.5% [26.0, 39.9] / 13.9% [11.4, 16.6] / 7.3% [5.0, 9.8] |
-| Risk ratio high vs low | 3.30 [2.69, 4.11] | 4.46 [3.16, 6.81] |
-| AUC: rule / fewer active devs / less recent activity | 0.650 [0.626, 0.671] / 0.745 [0.717, 0.769] / 0.838 [0.817, 0.858] | 0.649 [0.615, 0.684] / 0.688 [0.648, 0.726] / 0.836 [0.807, 0.862] |
-| AUC difference: rule − fewer active / rule − less recent | −0.095 [−0.123, −0.068] / −0.188 [−0.215, −0.163] | −0.039 [−0.074, −0.000] / −0.186 [−0.224, −0.147] |
+| Cases (base loss rate) | 2,136 (36.0%) | 1,614 (15.2%) |
+| Loss rate: high / medium / low | 59.9% [53.8, 65.9] / 35.1% [31.8, 38.3] / 17.9% [14.3, 21.6] | 34.0% [27.2, 41.4] / 13.8% [11.3, 16.5] / 7.3% [5.1, 10.0] |
+| Risk ratio high vs low | 3.35 [2.72, 4.18] | 4.64 [3.25, 6.76] |
+| AUC: rule / fewer active devs / less recent activity | 0.654 [0.631, 0.678] / 0.758 [0.730, 0.781] / 0.847 [0.828, 0.864] | 0.656 [0.618, 0.687] / 0.697 [0.657, 0.737] / 0.844 [0.818, 0.872] |
+| AUC difference: rule − fewer active / rule − less recent | −0.104 [−0.130, −0.076] / −0.193 [−0.217, −0.169] | −0.041 [−0.080, −0.003] / −0.188 [−0.224, −0.152] |
 
 Per repo, the rule's AUC ranges from 0.478 (opentogethertube) to 0.857 (dangerzone). In 19 of the 19 repos with an AUC, it is below the "less recent" AUC.
 First submission: no backtest.
@@ -163,10 +166,80 @@ Question: "What is PR #N about, and who wrote it?"
 - The 1,114-commit ID comes from a GitHub noreply e-mail linked to `dyc3`, the repo owner's login. The other two come from plain git e-mails and have no login.
 - None is a bot. Same name, same repo, and a noreply ID for the owner's own account point to one person, but this is not verified by a person.
 - Merging them puts 89% of commits under one identity, so many file HHIs move at once.
-- The conservative resolution splits this person, which the GitHub-attribution merge (k3d ρ 0.729, opentogethertube 0.518 in `identity_merge.csv`) also shows.
+- The conservative resolution splits this person, which the GitHub-attribution merge (opentogethertube 0.518 in `identity_merge.csv`; k3d 0.729 before the vendored-code exclusion, 0.825 after) also shows.
 
 **2b. ρ with vs without bots = 0.881 in openfaas/faas-netes — vendored dependency files.**
 - The only bot is `dependabot[bot]` (44 of 1,849 commits). Its most-touched files are `go.mod`, `go.sum` and `vendor/modules.txt`.
 - 1,749 of the 2,118 ranked files are under `vendor/`. Of the 273 files whose HHI changes when bots are added, 267 are under `vendor/`.
 - The top committer changes in only 3 files.
-- Excluding `vendor/`, ρ is 0.995 (369 files).
+- Excluding `vendor/`, ρ is 0.995 (369 files). This led to the vendored-code exclusion rule; with it, `concentration.csv` reports 0.995.
+
+## Vendored-code exclusion (re-run 2026-11-18, `run_all` 20/20 complete) — compared with commit b79c4ed
+
+**Rule** (`analysis/exclusions.py`):
+- A file is excluded when any directory in its path is named `vendor`, `vendored`, `_vendor`, `third_party`, `third-party`, `thirdparty`, `3rdparty`, `node_modules` or `bower_components` (case-insensitive). File names are never matched.
+- Configurable with `REPOMIND_EXCLUDE_DIRS` (`none` disables it).
+- Applied to Module 4/5 activity (concentration, risk, backtest, identity merge, Module 7's per-file metrics, UI).
+- Recorded as `path_exclusion` and `excluded_files` in `dataset.csv`, `concentration.csv`, `risk.csv`, `backtest.csv`, `identity_merge.csv` and the Module 4/5 JSON outputs.
+- Not applied to retrieval, attribution, linkage or co-change.
+
+**Files excluded** (`dataset.csv: excluded_files`):
+
+| Repo | Excluded / all files | Matched directories |
+|---|---|---|
+| k3d-io/k3d | 9,478 / 9,925 | vendor, docgen/vendor, tools/vendor |
+| openfaas/faas-netes | 7,165 / 8,488 | vendor |
+| dyc3/opentogethertube | 22 / 1,293 | client/src/assets/fonts/vendor |
+| ouch-org/ouch | 22 / 186 | third-party |
+| sendgrid/sendgrid-go | 10 / 186 | vendor |
+| freedomofpress/dangerzone | 2 / 588 | vendor |
+| other 14 repos | 0 | — |
+
+**Changed headline numbers (old → new):**
+
+| Item | Old → new |
+|---|---|
+| k3d ranked files / components | 2,582 → 279 / 57 → 45 |
+| k3d median N_eff (files); files top share ≥ 80% | 2.08 → 1.60; 25.4% → 47.3% |
+| k3d ρ commits vs recency / vs multi-signal | 0.041 → 0.737 / 0.817 → 0.737 |
+| k3d ρ half-life 90v365 / 365v1095 / 90v1095 | 0.810 → 0.427 / 0.372 → 0.849 / −0.020 → 0.303 |
+| k3d ρ conservative vs name-merged; vs reference-account merge | 0.682 → 0.778; 0.729 → 0.825 |
+| k3d risk: components / assessable / high / medium | 71 → 54 / 22 → 13 / 17 → 9 / 5 → 4 |
+| k3d risk agreement @180 / @730 | 77.3% → 61.5% / 90.9% → 84.6% |
+| k3d reference-account merge: risk levels changed | 14 → 6 |
+| faas-netes ranked files / components | 2,118 → 369 / 44 → 37 |
+| faas-netes median N_eff (files); files top share ≥ 80% | 1.60 → 1.35; 48.0% → 57.7% |
+| faas-netes ρ commits vs recency / vs multi-signal | 0.652 → 0.954 / 0.892 → 0.932 |
+| faas-netes ρ half-life 90v365 / 365v1095 | 0.974 → 0.947 / 0.885 → 0.974 |
+| faas-netes ρ with vs without bots; files whose top committer changes with bots | **0.881 → 0.995**; 3 → 0 |
+| faas-netes risk: components / assessable / medium / low | 59 → 50 / 18 → 11 / 13 → 10 / 5 → 1 |
+| faas-netes risk agreement @180 / @730 | 44.4% → 72.7% / 77.8% → 100% |
+| k3d backtest: cases / AUC rule / fewer active / less recent | 144 → 106 / 0.504 → 0.546 / 0.687 → 0.760 / 0.802 → 0.829 |
+| faas-netes backtest: cases / AUC rule / fewer active / less recent | 157 → 120 / 0.570 → 0.580 / 0.623 → 0.691 / 0.650 → 0.715 |
+| dangerzone / ouch / sendgrid-go risk components | 65 → 64 / 22 → 21 / 52 → 51 (one insufficient-evidence component each; levels otherwise unchanged) |
+| **Pooled backtest A:** cases / components / base loss rate | 2,211 → 2,136 / 609 → 591 / 35.4% → 36.0% |
+| Pooled A: loss high / medium / low | 58.7% → 59.9% / 34.3% → 35.1% / 17.8% → 17.9% |
+| Pooled A: risk ratio high vs low | 3.30 → 3.35 |
+| Pooled A: AUC rule / fewer active / less recent | 0.650 → 0.654 / 0.745 → 0.758 / 0.838 → 0.847 |
+| Pooled A: AUC rule − fewer active / rule − less recent | −0.095 → −0.104 / −0.188 → −0.193 |
+| **Pooled backtest B:** cases / base loss rate | 1,683 → 1,614 / 15.1% → 15.2% |
+| Pooled B: loss high / medium / low; risk ratio | 32.5% → 34.0% / 13.9% → 13.8% / 7.3% → 7.3%; 4.46 → 4.64 |
+| Pooled B: AUC rule / fewer active / less recent | 0.649 → 0.656 / 0.688 → 0.697 / 0.836 → 0.844 |
+| Pooled B: AUC rule − fewer active | −0.039 [−0.074, −0.000] → −0.041 [−0.080, −0.003] |
+| Pooled risk levels (high / medium / low; assessable) | 90 / 225 / 54; 369 → 82 / 221 / 50; 353 |
+| Reference-account merge, total risk levels changed | 28 / 970 → 20 / 941 |
+| Across-repo ranges | ρ bots min 0.881 (faas-netes) → 0.935 (fastapi); ρ 365v1095 min 0.372 (k3d) → 0.580 (ripme); ρ commits vs multi-signal min 0.774 → 0.737 (k3d) |
+
+Unchanged in direction:
+- Pooled A and B both still order loss rates high > medium > low (B's low stays 7.3%), and every AUC difference remains negative with a CI excluding 0.
+- The rule's AUC is still below the "less recent" AUC in 19 of 19 repos.
+- Per-repo AUC range (0.478 opentogethertube – 0.857 dangerzone) is unchanged.
+
+**Other differences found in this comparison (not caused by the rule):**
+- `linkage.csv`, ora, human commits linked: 3.98% → 3.48% (8 → 7 of 201).
+  - The old row was written before express was loaded. One ora committer also commits to express, and the `developer` table is shared across repos and loaded with `INSERT OR REPLACE`. Loading express rewrote that developer as medium confidence with no login.
+  - The new value reflects the current database. A shared developer's identity fields depend on which repo was loaded last.
+- Backtest case files: for repos with nothing excluded, the point estimates are identical but bootstrap CI bounds move slightly (e.g. flask AUC rule lower bound 0.4930 → 0.4946).
+  - Cause: case rows come out in a different order on each run (Python randomises set ordering), so the seeded bootstrap draws different samples.
+  - The CIs are therefore not bit-reproducible across runs.
+- sendgrid-go: `skipped_insufficient` 76 → 69 after excluding its 10 vendor files.

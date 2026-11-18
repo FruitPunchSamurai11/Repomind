@@ -336,10 +336,12 @@ def summarise(rows: list[dict]) -> list[dict]:
                 crows = [r for r in rrows if r["condition"] == cond]
                 if not crows:
                     continue
-                for qtype in TYPES + list(GROUPS):
+                # every question type once, then the groups whose name is not already a type
+                # ("false_premise" is both; it used to be skipped entirely)
+                for qtype in TYPES + [g for g in GROUPS if g not in TYPES]:
                     types = GROUPS.get(qtype, [qtype])
                     sel = [r for r in crows if r["question_type"] in types]
-                    if not sel or (qtype in GROUPS and len(types) == 1):
+                    if not sel:
                         continue
                     n = len(sel)
                     failed = sum(r["generation_failed"] == "1" for r in sel)

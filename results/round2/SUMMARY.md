@@ -99,7 +99,8 @@ Task: issue title → closing PR, title+body index. 19 repos and 3,625 queries; 
 | Answerable: correct | **69/96 = 71.9%** [62.2, 79.9] | 0/96 = 0% [0, 3.9] | 0/96 = 0% [0, 3.9] |
 | Answerable: confidently wrong | 25/96 = 26.0% [18.3, 35.6] | 1/96 = 1.0% | 93/96 = 96.9% |
 | Non-existent items handled safely | 18/27 = 66.7% [47.8, 81.4] | 27/27 = 100% [87.5, 100] | 0/27 = 0% [0, 12.5] |
-| False premise handled safely* | 16/27 = 59.3% [40.7, 75.5] | 27/27 = 100% [87.5, 100] | 0/27 = 0% [0, 12.5] |
+| False premise handled safely | 16/27 = 59.3% [40.7, 75.5] | 27/27 = 100% [87.5, 100] | 0/27 = 0% [0, 12.5] |
+| False premise: confidently wrong | 11/27 = 40.7% [24.5, 59.3] | 0/27 = 0% [0, 12.5] | 27/27 = 100% [87.5, 100] |
 | All: confidently wrong | 45/150 = 30.0% [23.2, 37.8] | 1/150 = 0.7% | 146/150 = 97.3% |
 | Answers with any citation | 5/150 = 3.3% [1.4, 7.6] | 0/150 | 0/150 |
 | Invalid citation / unverified identifier | 1/150 / 0/150 | 0 / 0 | 0 / 11/150 = 7.3% |
@@ -109,15 +110,14 @@ Task: issue title → closing PR, title+body index. 19 repos and 3,625 queries; 
 - **RAG correct by question type:** top committer 20/24, top reviewer 18/24, PR topic 21/24, issue → PR 10/24. By repo: flask 18/32, cobra 25/32, k3d 26/32.
 - **Exact McNemar test on per-question success** (b = only RAG succeeds, c = only the other condition succeeds):
 
-| Comparison | Answerable | Controls | All |
-|---|---|---|---|
-| RAG vs closed-book | b=69, c=0, p=3.4e-21 | b=0, c=20, p=1.9e-6 | b=69, c=20, p=1.8e-7 |
-| RAG vs forced guess | b=69, c=0, p=3.4e-21 | b=34, c=0, p=1.2e-10 | b=103, c=0, p=2.0e-31 |
+| Comparison | Answerable | Controls | of which false premise | All |
+|---|---|---|---|---|
+| RAG vs closed-book | b=69, c=0, p=3.4e-21 | b=0, c=20, p=1.9e-6 | b=0, c=11, p=9.8e-4 | b=69, c=20, p=1.8e-7 |
+| RAG vs forced guess | b=69, c=0, p=3.4e-21 | b=34, c=0, p=1.2e-10 | b=16, c=0, p=3.1e-5 | b=103, c=0, p=2.0e-31 |
 
 - **The 4 generation_failed answers** are all in k3d forced guess: three "which PR closed issue" questions and one non-existent-issue question. Ollama aborted each with "token repeat limit reached".
   - The error text is in `llm_eval_answers.csv`.
   - They count as not correct / not safe and are not counted as abstentions or confidently wrong.
-- *False-premise rows are missing from `llm_eval.csv`: a bug in its summariser skips that question type, although the answers are included in the "controls" and "all" rows. The false-premise numbers above were computed from `llm_eval_answers.csv` with Wilson intervals.
 - **First submission:** gemini-3.8-flash, flask only, 10 questions, RAG only: 10/10 correct, 0 invalid citations, 0 unverified identifiers. The model and the question set differ, so this is not a like-for-like comparison.
 
 ## 8. Prompt injection — `injection.csv`, `injection_answers.csv`

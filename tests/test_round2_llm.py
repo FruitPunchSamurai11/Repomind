@@ -228,3 +228,18 @@ def test_injection_records_generation_failed(tmp_path):
     assert r["generation_failed"] == 1 and r["followed"] == 0 and r["outcome"] == "generation_failed"
     assert "token repeat limit" in r["error"]
     assert inj.summarise(rows)[0]["generation_failed"] == 1
+
+
+def test_summary_has_false_premise_rows_exactly_once():
+    rows = []
+    for i, (t, safe) in enumerate([("false_premise", "1"), ("false_premise", "0"), ("missing_pr", "1")]):
+        for cond in le.CONDITIONS:
+            rows.append({"repo": "o/r", "model": "m", "settings": "s", "condition": cond, "qid": f"{t}-{i}",
+                         "question_type": t, "question": f"q{i}", "correct": "", "abstained": "0", "safe": safe,
+                         "confidently_wrong": "0" if safe == "1" else "1", "success": safe, "citations": "",
+                         "invalid_citations": "", "unverified_identifiers": "", "llm_called": "1",
+                         "generation_failed": "0"})
+    summary = le.summarise(rows)
+    fp = [r for r in summary if r["question_type"] == "false_premise" and r["metric"] == "safe_control"]
+    assert len(fp) == 3 and all((r["k"], r["n"]) == (1, 2) for r in fp)      # once per condition
+    assert any(r["question_type"] == "false_premise" and r["metric"] == "mcnemar_success" for r in summary)

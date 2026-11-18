@@ -1,0 +1,47 @@
+﻿n,repo,question_type,question,expected (from database),model_answer,automatic_score,agree (yes/no),comment
+1,spf13/cobra,top_reviewer,Who reviewed changes to user_guide.md?,marckhouzam,"Here's the answer:
+
+Marckhouzam, jpmcb, Unai Martinez-Corral, Luap99, johnSchnake, jharshman, PaluMacil, aawsome",PASS (correct),yes,
+2,pallets/flask,top_reviewer,Who reviewed changes to tests/test_blueprints.py?,davidism,"Davidism, ThiefMaster, jeffwidman, arthtyagi, pgjones, and kk456852 reviewed changes to tests/test_blueprints.py.",PASS (correct),yes,
+3,k3d-io/k3d,pr_about,What is pull request #367 about?,docs: add documentation and descriptor for using calico instead of fl…,PR #367 adds documentation and descriptor for replacing Flannel by Calico for using [NetworkPolicies](https://kubernetes.io/docs/concepts/services-networking/network-policies/). It was created by louiznk on 2020-10-05 and merged on 2020-10-07.,PASS (correct),yes,
+4,spf13/cobra,pr_about,What is pull request #414 about?,Refactor flags mechanisms,PR #414 refactors mechanisms. It was created by n10v on 2017-04-05 and merged into 2017-04-20.,PASS (correct),yes,
+5,spf13/cobra,false_premise,Why did Nick Miyake delete doc/yaml_docs_test.go?,,This data does not provide the reason for Nick Miyake’s deletion of doc/yaml_docs_test.go.,PASS (safe),yes,
+6,pallets/flask,pr_about,What is pull request #4527 about?,test_cli_runner() documentation fix,PR #4527 is a fix for the test_cli_runner() documentation. It addresses a bug where the function does not work as demonstrated in the documentation.,PASS (correct),yes,
+7,pallets/flask,top_reviewer,Who reviewed changes to docs/testing.rst?,ThiefMaster,"Davidism, jeffwidman, auvipy, arthtyagi, JordanP, Sahith02, and mitsuhiko reviewed changes to docs/testing.rst.",FAIL (confidently_wrong),yes,
+8,k3d-io/k3d,missing_pr,What is pull request #2967 about?,,"I could not find repository evidence relevant to this question, so I can't answer it. Try naming a file, directory, PR/issue number or person that exists in this repository.",PASS (safe),yes,
+9,pallets/flask,issue_closed_by,Which pull request closed issue #1776?,1821,PR #1821,PASS (correct),yes,
+10,pallets/flask,top_reviewer,Who reviewed changes to .travis.yml?,ThiefMaster,"I could not find repository evidence relevant to this question, so I can't answer it. Try naming a file, directory, PR/issue number or person that exists in this repository.",FAIL (abstained),yes,
+11,pallets/flask,missing_issue,Which pull request closed issue #10385?,,"I could not find repository evidence relevant to this question, so I can't answer it. Try naming a file, directory, PR/issue number or person that exists in this repository.",PASS (safe),yes,
+12,pallets/flask,false_premise,Why did Anthony Plunkett delete flask/testsuite/helpers.py?,,This data does not contain information about why Anthony Plunkett deleted flask/testsuite/helpers.py.,PASS (safe),yes,
+13,spf13/cobra,issue_closed_by,Which pull request closed issue #2319?,2413,PR #2413 by duglin closed issue #2319.,PASS (correct),yes,
+14,spf13/cobra,issue_closed_by,Which pull request closed issue #1933?,2285,ryenus closed the issue #1933.,FAIL (confidently_wrong),yes,
+15,k3d-io/k3d,issue_closed_by,Which pull request closed issue #1642?,1646,The issue #1642 was closed by fccagou on 2026-02-05.,FAIL (confidently_wrong),yes,
+16,spf13/cobra,missing_issue,Which pull request closed issue #8334?,,"I could not find repository evidence relevant to this question, so I can't answer it. Try naming a file, directory, PR/issue number or person that exists in this repository.",PASS (safe),yes,
+17,k3d-io/k3d,false_premise,Why did Louis Tournayre delete pkg/runtimes/docker/node.go?,,This data does not contain information about why Louis Tournayre deleted pkg/runtimes/docker/node.go.,PASS (safe),yes,
+18,spf13/cobra,top_committer,Who has made the most commits to zsh_completions.go?,Haim Ashkenazi,"Here’s the answer:
+
+*   Haim Ashkenazi has 14 commits.
+*   Marc Khouzam has 2 commits.
+*   Eric Paris has 1 commit.
+*   Paul Chesnais has 1 commit.
+*   Gyanendra Mishra has 1 commit.",PASS (correct),yes,
+19,k3d-io/k3d,pr_about,What is pull request #1442 about?,feat: compatibility with docker userns-remap,PR #1442 is a compatibility PR to make k3d compatible with the Docker userns-remap feature.,PASS (correct),yes,
+20,k3d-io/k3d,issue_closed_by,Which pull request closed issue #998?,1014,conan-k-chang closed issue #998 in 2022-03-15.,FAIL (confidently_wrong),yes,
+21,k3d-io/k3d,missing_pr,What is pull request #4339 about?,,"I could not find repository evidence relevant to this question, so I can't answer it. Try naming a file, directory, PR/issue number or person that exists in this repository.",PASS (safe),yes,
+22,pallets/flask,top_committer,Who has made the most commits to docs/views.rst?,David Lord,David Lord has 9 commits.,PASS (correct),yes,
+23,spf13/cobra,missing_file,Who has made the most commits to .github/workflows/internal_Test.yml?,,This suggests that Enrico Candino has made the most commits to the `github/workflows/internal_Test.yml` file.,FAIL (confidently_wrong),yes,
+24,pallets/flask,top_committer,Who has made the most commits to CHANGES?,Armin Ronacher,"Here’s a breakdown of the contributors based on the provided evidence:
+
+*   Markus Unterwaditzer
+*   Armin Ronacher
+*   tarruda
+*   itsliamdowd
+*   Kettenbach-it
+*   Ribbon",PASS (correct),yes,
+25,pallets/flask,pr_about,What is pull request #4652 about?,Update javascript.rst,PR #4652 is about updating the javascript.rst documentation.,PASS (correct),yes,
+26,spf13/cobra,top_reviewer,Who reviewed changes to site/content/user_guide.md?,marckhouzam,Marckhouzam 10 PRs (last 2026-04-25) and PaluMacil 1 PRs (last 2023-04-15) reviewed changes to site/content/user_guide.md.,PASS (correct),yes,
+27,spf13/cobra,missing_file,Who has made the most commits to .github/compat_labeler.yml?,,This suggests John Calabrese has made the most commits to the file.,FAIL (confidently_wrong),yes,
+28,k3d-io/k3d,top_committer,Who has made the most commits to pkg/runtimes/docker/util.go?,Thorsten Klein,Thorsten Klein has 5 commits.,PASS (correct),yes,
+29,pallets/flask,false_premise,Why did Kiss György delete docs/patterns/sqlite3.rst?,,"[fact:3] Pull requests that touched docs/patterns/sqlite3.rst:
+  [pr:#5812] MERGED 2025-09-19 by davidism: merge app and request context (#5812) (linked by GitHub)",FAIL (confidently_wrong),yes,
+30,pallets/flask,top_committer,Who has made the most commits to docs/patterns/sqlite3.rst?,David Lord,David Lord has 1 commit.,PASS (correct),yes,

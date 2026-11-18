@@ -5,6 +5,10 @@ The API key is read from GEMINI_API_KEY (or GOOGLE_API_KEY) in the environment
 or the git-ignored .env file, sent only in a request header, and never logged
 or included in error messages.
 
+OllamaClient talks to a local Ollama server (default http://localhost:11434,
+model gemma3:1b) with temperature 0 and a fixed seed, so runs are repeatable
+on the same machine and model build. No key is needed.
+
 FakeClient is a scripted stand-in used by the tests and by --dry-run style
 checks; it makes no network calls.
 """
@@ -135,6 +139,63 @@ class GeminiClient(LLMClient):
             if "generateContent" in m.get("supportedGenerationMethods", []))
 
 
+OLLAMA_HOST = "http://localhost:11434"
+OLLAMA_MODEL = "gemma3:1b"
+
+
+class OllamaClient(LLMClient):
+    """Local model via Ollama's /api/chat. Deterministic settings: temperature 0, fixed seed.
+
+    num_ctx is raised from Ollama's small default so Module 8's evidence (<= 14,000 chars) is not cut
+    off silently; num_predict caps runaway generations of small models."""
+
+    def __init__(self, model=None, host=None, seed=42, num_ctx=8192, max_tokens=1024, timeout=600, max_retries=2,
+                 post=None, sleep=time.sleep):
+        self.model = model or os.environ.get("OLLAMA_MODEL") or OLLAMA_MODEL
+        self.host = (host or os.environ.get("OLLAMA_HOST") or OLLAMA_HOST).rstrip("/")
+        if not self.host.startswith("http"):
+            self.host = "http://" + self.host
+        self.seed, self.num_ctx, self.max_tokens = seed, num_ctx, max_tokens
+        self.timeout, self.max_retries = timeout, max_retries
+        self._post = post or requests.post
+        self._sleep = sleep
+
+    @property
+    def settings(self) -> str:
+        return f"ollama temperature=0 seed={self.seed} num_ctx={self.num_ctx} num_predict<={self.max_tokens}"
+
+    def complete(self, system, user, max_output_tokens=4096) -> LLMResponse:
+        body = {"model": self.model, "stream": False,
+                "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
+                "options": {"temperature": 0, "seed": self.seed, "num_ctx": self.num_ctx,
+                            "num_predict": min(max_output_tokens, self.max_tokens)}}
+        last = None
+        for attempt in range(self.max_retries + 1):
+            try:
+                resp = self._post(f"{self.host}/api/chat", json=body, timeout=self.timeout)
+            except requests.ConnectionError:
+                raise LLMError(f"Ollama is not reachable at {self.host}. Start it (ollama serve) and try again.")
+            except requests.RequestException as e:
+                last = f"network error: {type(e).__name__}"
+                self._sleep(min(2 ** attempt, 30))
+                continue
+            if resp.status_code == 200:
+                data = resp.json()
+                text = ((data.get("message") or {}).get("content") or "").strip()
+                if not text:
+                    raise LLMError(f"Ollama returned an empty answer (done_reason: {data.get('done_reason')}).")
+                return LLMResponse(text, self.model, data.get("prompt_eval_count"), data.get("eval_count"), None,
+                                   data.get("done_reason"))
+            msg = (resp.text or "")[:300]
+            if resp.status_code == 404:
+                raise LLMError(f"Ollama has no model '{self.model}': {msg} Run: ollama pull {self.model}")
+            last = f"HTTP {resp.status_code}: {msg}"
+            if resp.status_code < 500:
+                break
+            self._sleep(min(2 ** attempt, 30))
+        raise LLMError(f"Ollama request failed ({last}).")
+
+
 @dataclass
 class FakeClient(LLMClient):
     """Scripted stand-in: `responder(system, user) -> text`. Records every call."""
@@ -152,4 +213,6 @@ def make_client(provider: str | None = None, model: str | None = None, **kw) -> 
     provider = (provider or os.environ.get("LLM_PROVIDER") or "gemini").lower()
     if provider == "gemini":
         return GeminiClient(model=model, **kw)
-    raise LLMError(f"Unknown provider '{provider}'. Supported: gemini.")
+    if provider == "ollama":
+        return OllamaClient(model=model, **kw)
+    raise LLMError(f"Unknown provider '{provider}'. Supported: gemini, ollama.")

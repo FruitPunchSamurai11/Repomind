@@ -97,6 +97,16 @@ def wilson(k: int, n: int, z: float = 1.96) -> tuple[float | None, float | None]
     return max(0.0, centre - half), min(1.0, centre + half)
 
 
+def mcnemar_exact(b: int, c: int) -> float:
+    """Two-sided exact McNemar test on the discordant pairs b, c (binomial, p = 0.5)."""
+    n = b + c
+    if n == 0:
+        return 1.0
+    from math import comb
+    tail = sum(comb(n, i) for i in range(min(b, c) + 1)) / 2 ** n
+    return min(1.0, 2 * tail)
+
+
 def fmt(x) -> str:
     if x is None:
         return ""
